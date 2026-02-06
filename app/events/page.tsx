@@ -47,9 +47,8 @@ export default function EventsPage() {
                     location: row.Local,
                     organizer: row.Agente,
                     coverUrl: row.Fotos?.[0]?.url || "",
-                    coverBase64: "", // Not used when fetching from remote
-                    objectives: row.Objetivos ? row.Objetivos.split(",").map(s => s.trim()) : [],
-                    results: row.Resulados ? row.Resulados.split(",").map(s => s.trim()) : [],
+                    porQue: row.porque ? row.porque.split(",").map((s: string) => s.trim()) : [],
+                    comoQuanto: row["como/quanto"] ? row["como/quanto"].split(",").map((s: string) => s.trim()) : [],
                     tone: "jornalistico", // Default as it's not in Baserow yet
                     length: "medio",     // Default
                     cta: false,          // Default

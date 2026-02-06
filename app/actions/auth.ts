@@ -18,7 +18,7 @@ export async function login(prevState: any, formData: FormData) {
             maxAge: 60 * 60 * 24 * 7, // 1 week
             path: "/",
         });
-        redirect("/create");
+        redirect("/");
     } else {
         return { error: "Senha incorreta" };
     }

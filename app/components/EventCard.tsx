@@ -64,12 +64,12 @@ export function EventCard({ event }: EventCardProps) {
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                    {event.objectives.slice(0, 1).map((obj, i) => (
+                    {event.porQue && event.porQue.slice(0, 1).map((obj, i) => (
                         <Badge key={i} variant="outline" className="text-[10px] font-normal">
                             {obj}
                         </Badge>
                     ))}
-                    {event.results.slice(0, 1).map((res, i) => (
+                    {event.comoQuanto && event.comoQuanto.slice(0, 1).map((res, i) => (
                         <Badge key={i} variant="outline" className="text-[10px] font-normal bg-blue-50 text-blue-700 border-blue-100">
                             {res}
                         </Badge>
