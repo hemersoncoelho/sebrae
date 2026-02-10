@@ -19,12 +19,20 @@ export function MonthlyEventsChart({ events }: MonthlyEventsChartProps) {
         const monthMap = new Map<string, number>();
 
         sortedEvents.forEach(event => {
+            if (!event.date) return;
+
             const date = new Date(event.date);
+            // Check for invalid date
+            if (isNaN(date.getTime())) return;
+
             // Create a sortable key (YYYY-MM) to ensure correct ordering if we used a plain object
             // But since we are iterating sorted array, insertion order is fine.
-            const monthKey = date.toLocaleString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase();
-
-            monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + 1);
+            try {
+                const monthKey = date.toLocaleString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase();
+                monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + 1);
+            } catch (e) {
+                console.warn("Error formatting date:", event.date, e);
+            }
         });
 
         return Array.from(monthMap.entries()).map(([month, count]) => ({ month, count }));
@@ -46,7 +54,7 @@ export function MonthlyEventsChart({ events }: MonthlyEventsChartProps) {
                     data.map((item, index) => {
                         const heightPercentage = (item.count / maxCount) * 100;
                         return (
-                            <div key={index} className="flex flex-col items-center gap-2 flex-1 group">
+                            <div key={index} className="flex flex-col items-center gap-2 flex-1 group h-full">
                                 <div className="relative w-full flex items-end justify-center h-full">
                                     {/* Tooltip */}
                                     <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs py-1 px-2 rounded pointer-events-none whitespace-nowrap z-10">

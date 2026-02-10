@@ -10,7 +10,9 @@ import { TrendingSidebar } from "@/app/components/TrendingSidebar";
 import { EventItem } from "@/app/types";
 import { getEventsFromBaserow } from "@/app/services/baserow";
 import { MonthlyEventsChart } from "@/app/components/MonthlyEventsChart";
+import { EventsByAnalystChart } from "@/app/components/EventsByAnalystChart";
 import { getEvents as fetchLocalEvents } from "@/app/utils/storage";
+import { parseDate } from "@/app/utils/formatters";
 
 export default function EventsPage() {
     const [events, setEvents] = React.useState<EventItem[]>([]);
@@ -43,7 +45,7 @@ export default function EventsPage() {
                 const mappedEvents: EventItem[] = baserowEvents.map((row) => ({
                     id: row.id.toString(),
                     title: row.Evento,
-                    date: row.Data_Evento,
+                    date: parseDate(row.Data_Evento),
                     location: row.Local,
                     organizer: row.Agente,
                     coverUrl: row.Fotos?.[0]?.url || "",
@@ -59,6 +61,8 @@ export default function EventsPage() {
                     updatedAt: new Date().toISOString(),
                 }));
 
+                console.log("Mapped Events:", mappedEvents); // DEBUG: Check dates
+
                 // Sort by date desc
                 const sorted = mappedEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                 setEvents(sorted);
@@ -67,7 +71,11 @@ export default function EventsPage() {
                 console.error("Failed to fetch from Baserow, falling back to local storage", error);
                 // Fallback to local storage
                 const localData = fetchLocalEvents();
-                const sorted = localData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                const eventsWithParsedDates = localData.map(e => ({
+                    ...e,
+                    date: parseDate(e.date)
+                }));
+                const sorted = eventsWithParsedDates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                 setEvents(sorted);
                 setFilteredEvents(sorted);
             } finally {
@@ -194,6 +202,7 @@ export default function EventsPage() {
 
                     {/* Sidebar (Desktop only) */}
                     <div className="hidden lg:block lg:col-span-4 space-y-6">
+                        <EventsByAnalystChart events={events} />
                         <TrendingSidebar events={events} />
 
                         {/* Promo / Extra Widget */}
