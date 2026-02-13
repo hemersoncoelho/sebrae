@@ -43,7 +43,7 @@ export default function EventsPage() {
     const availableProjects = React.useMemo(() => {
         const projects = new Set<string>();
         events.forEach(event => {
-            event.projetos.forEach(p => projects.add(p));
+            (event.projetos || []).forEach(p => projects.add(p));
         });
         return Array.from(projects).sort();
     }, [events]);
@@ -52,7 +52,7 @@ export default function EventsPage() {
     const availableEixos = React.useMemo(() => {
         const eixos = new Set<string>();
         events.forEach(event => {
-            event.eixos.forEach(e => eixos.add(e));
+            (event.eixos || []).forEach(e => eixos.add(e));
         });
         return Array.from(eixos).sort();
     }, [events]);
@@ -146,12 +146,12 @@ export default function EventsPage() {
 
         // 3. Project Filter
         if (selectedProject !== "Todos") {
-            filtered = filtered.filter(e => e.projetos.includes(selectedProject));
+            filtered = filtered.filter(e => (e.projetos || []).includes(selectedProject));
         }
 
         // 4. Eixo Filter
         if (selectedEixo !== "Todos") {
-            filtered = filtered.filter(e => e.eixos.includes(selectedEixo));
+            filtered = filtered.filter(e => (e.eixos || []).includes(selectedEixo));
         }
 
         // 5. Organizer Filter
