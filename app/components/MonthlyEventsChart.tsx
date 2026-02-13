@@ -9,74 +9,64 @@ interface MonthlyEventsChartProps {
 
 export function MonthlyEventsChart({ events }: MonthlyEventsChartProps) {
     const data = React.useMemo(() => {
-        // If no events, return empty
-        if (events.length === 0) return [];
+        // Initialize all months with 0
+        const months = [
+            "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+            "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+        ];
+        const monthCounts = new Array(12).fill(0);
 
-        // Sort events by date using timestamps
-        const sortedEvents = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-        // Use a Map to preserve insertion order (which is chronological due to sort)
-        const monthMap = new Map<string, number>();
-
-        sortedEvents.forEach(event => {
+        events.forEach(event => {
             if (!event.date) return;
-
             const date = new Date(event.date);
-            // Check for invalid date
             if (isNaN(date.getTime())) return;
 
-            // Create a sortable key (YYYY-MM) to ensure correct ordering if we used a plain object
-            // But since we are iterating sorted array, insertion order is fine.
-            try {
-                const monthKey = date.toLocaleString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase();
-                monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + 1);
-            } catch (e) {
-                console.warn("Error formatting date:", event.date, e);
-            }
+            // Increment count for the month (0-11)
+            // Note: This aggregates over ALL years. 
+            // If we want only current year, we would filter first. 
+            // For now, simple seasonality check is usually desired or the data is from current year.
+            monthCounts[date.getMonth()]++;
         });
 
-        return Array.from(monthMap.entries()).map(([month, count]) => ({ month, count }));
+        return months.map((name, index) => ({
+            name,
+            count: monthCounts[index]
+        }));
 
     }, [events]);
 
     const maxCount = Math.max(...data.map(d => d.count), 1);
 
+    const getIntensityColor = (count: number) => {
+        if (count === 0) return "bg-gray-50 text-gray-300";
+
+        const intensity = count / maxCount;
+
+        if (intensity < 0.2) return "bg-blue-100 text-blue-700";
+        if (intensity < 0.4) return "bg-blue-300 text-blue-800";
+        if (intensity < 0.6) return "bg-blue-500 text-white";
+        if (intensity < 0.8) return "bg-blue-700 text-white";
+        return "bg-blue-900 text-white";
+    };
+
     return (
         <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
             <h3 className="font-bold text-lg text-gray-900 mb-6">Eventos por Mês</h3>
 
-            <div className="flex items-end justify-between gap-2 h-40">
-                {data.length === 0 ? (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                        Sem dados
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {data.map((item, index) => (
+                    <div
+                        key={index}
+                        className={`
+                            relative flex flex-col items-center justify-center p-4 rounded-xl transition-all
+                            ${getIntensityColor(item.count)}
+                        `}
+                        title={`${item.count} eventos em ${item.name}`}
+                    >
+                        <span className="text-lg font-bold">{item.count}</span>
+                        <span className="text-xs uppercase font-medium opacity-80">{item.name}</span>
                     </div>
-                ) : (
-                    data.map((item, index) => {
-                        const heightPercentage = (item.count / maxCount) * 100;
-                        return (
-                            <div key={index} className="flex flex-col items-center gap-2 flex-1 group h-full">
-                                <div className="relative w-full flex items-end justify-center h-full">
-                                    {/* Tooltip */}
-                                    <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs py-1 px-2 rounded pointer-events-none whitespace-nowrap z-10">
-                                        {item.count} eventos
-                                    </div>
-                                    {/* Bar Container */}
-                                    <div
-                                        className="w-full max-w-[24px] bg-blue-50 rounded-t-sm relative overflow-hidden"
-                                        style={{ height: '100%' }}
-                                    >
-                                        {/* Filled Bar */}
-                                        <div
-                                            className="absolute bottom-0 w-full bg-blue-600 rounded-t-sm transition-all duration-500 ease-out group-hover:bg-blue-700"
-                                            style={{ height: `${heightPercentage}%` }}
-                                        />
-                                    </div>
-                                </div>
-                                <span className="text-[10px] font-medium text-gray-500 uppercase">{item.month}</span>
-                            </div>
-                        );
-                    })
-                )}
+                ))}
             </div>
         </div>
     );

@@ -16,8 +16,13 @@ export function EventsByAnalystChart({ events }: EventsByAnalystChartProps) {
         const analystMap = new Map<string, number>();
 
         events.forEach(event => {
-            const agent = event.organizer || "Desconhecido";
-            analystMap.set(agent, (analystMap.get(agent) || 0) + 1);
+            const organizers = Array.isArray(event.organizer)
+                ? event.organizer
+                : event.organizer ? [event.organizer] : ["Desconhecido"];
+
+            organizers.forEach(agent => {
+                analystMap.set(agent, (analystMap.get(agent) || 0) + 1);
+            });
         });
 
         // Convert to array and sort by count descending
@@ -59,7 +64,7 @@ export function EventsByAnalystChart({ events }: EventsByAnalystChartProps) {
                         return (
                             <div key={index} className="space-y-1">
                                 <div className="flex justify-between text-sm">
-                                    <span className="font-medium text-gray-700 truncate max-w-[180px]" title={item.agent}>
+                                    <span className="font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[180px]" title={item.agent}>
                                         {item.agent}
                                     </span>
                                     <span className="text-gray-500 font-medium">{item.count}</span>

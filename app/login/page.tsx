@@ -13,8 +13,9 @@ export default function LoginPage() {
         <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
             <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-lg">
                 <div className="text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                        <Lock className="h-6 w-6 text-blue-600" />
+                    <div className="flex flex-col items-center mb-2">
+                        <img src="/sebrae-logo.png" alt="Sebrae" className="h-16 w-auto mb-4" />
+                        <h1 className="text-xl font-bold text-gray-900">Relatório de Eventos</h1>
                     </div>
                     <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Acesso Restrito</h2>
                     <p className="mt-2 text-sm text-gray-600">

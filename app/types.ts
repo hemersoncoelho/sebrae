@@ -3,7 +3,9 @@ export interface EventItem {
   title: string;
   date: string;
   location?: string;
-  organizer?: string;
+  organizer?: string[];
+  eixos?: string[];
+  projetos?: string[];
   coverBase64?: string;
   coverUrl?: string;
   comoQuanto: string[];

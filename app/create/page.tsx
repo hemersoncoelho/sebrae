@@ -9,11 +9,47 @@ import { Input } from "@/app/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import { UploadField } from "@/app/components/UploadField";
 import { ChipInput } from "@/app/components/ChipInput";
+import { MultiSelect } from "@/app/components/MultiSelect";
 import { BrainLoader } from "@/app/components/ui/BrainLoader";
 import { EventItem, EventTone, EventLength } from "@/app/types";
 import { saveEvent } from "@/app/utils/storage";
 import { generateContent } from "@/app/utils/generate";
 import { uploadImageToBaserow, createEventRow } from "@/app/services/baserow";
+
+const ORGANIZERS = [
+    "Carla Araújo",
+    "Julião Klessio",
+    "Aucélio de Sousa",
+    "Wandrey Girão",
+    "Georgia Nobre",
+    "Caio Sabóia"
+];
+
+const EIXOS = [
+    "Ambiente de Negócios",
+    "Rede de Atendimento",
+    "Cultura Empreededora",
+    "Ecossistema de Inovação",
+    "Competitividade Empresarial"
+];
+
+const PROJETOS = [
+    "COMP. EMP - MODA CARIRI",
+    "COMP. EMP. - ROTA TURISTICA DO CARIRI",
+    "COMP. EMP. - BOVINOCULTURA DE LEITE E DERIVADOS CARIRI",
+    "COMP. EMP. - ALI PRODUTIVIDADE",
+    "COMP. EMP. - ALI RURAL",
+    "PLURAL CARIRI",
+    "EDUCAÇÃO EMPREENDEDORA - JEPP",
+    "PARCIAL",
+    "R.E - DESENVOLVIMENTO INOVAÇÃO - REGIONAL CARIRI",
+    "R.E - CE REDE INTEGRADA DE ECOSSISTEMAS DE INOVAÇÃO",
+    "A.N - CIDADE EMPREENDEDORA CARIRI",
+    "A.N - POLO EMPREENDEDOR CARIRI",
+    "A.N - TERRITÓRIO EMPREENDEDOR CE CARIRI",
+    "A.N - QUALIFICAÇÃO E RENDA",
+    "R.A. - TERRITÓRIOS DA ESPERANÇA - UR CARIRI"
+];
 
 export default function CreateEventPage() {
     const router = useRouter();
@@ -25,7 +61,9 @@ export default function CreateEventPage() {
         title: "",
         date: "",
         location: "",
-        organizer: "",
+        organizer: [],
+        eixos: [],
+        projetos: [],
         coverBase64: "",
         comoQuanto: [],
         porQue: [],
@@ -79,7 +117,9 @@ export default function CreateEventPage() {
                     Evento: formData.title!,
                     Data_Evento: formData.date!,
                     Local: formData.location || "",
-                    Agente: formData.organizer || "",
+                    Agente: formData.organizer ? formData.organizer.join(", ") : "",
+                    eixo: formData.eixos ? formData.eixos.join(", ") : "",
+                    projeto: formData.projetos ? formData.projetos.join(", ") : "",
                     Fotos: baserowImageName ? [{ name: baserowImageName, url: baserowImageUrl }] : [],
                     "como/quanto": formData.comoQuanto!.join(", "),
                     porque: formData.porQue!.join(", "),
@@ -117,6 +157,8 @@ export default function CreateEventPage() {
                 date: formData.date!,
                 location: formData.location,
                 organizer: formData.organizer,
+                eixos: formData.eixos,
+                projetos: formData.projetos,
                 coverBase64: baserowImageUrl ? "" : (formData.coverBase64 || ""),
                 coverUrl: baserowImageUrl,
                 comoQuanto: formData.comoQuanto!,
@@ -222,11 +264,29 @@ export default function CreateEventPage() {
                         </div>
 
                         <div className="grid gap-2">
-                            <label className="text-sm font-medium">Organizador</label>
-                            <Input
-                                placeholder="Ex: Equipe de Marketing"
-                                value={formData.organizer}
-                                onChange={(e) => setFormData({ ...formData, organizer: e.target.value })}
+                            <MultiSelect
+                                label="Organizador"
+                                options={ORGANIZERS}
+                                values={formData.organizer || []}
+                                onChange={(vals) => setFormData({ ...formData, organizer: vals })}
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <MultiSelect
+                                label="Eixos"
+                                options={EIXOS}
+                                values={formData.eixos || []}
+                                onChange={(vals) => setFormData({ ...formData, eixos: vals })}
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <MultiSelect
+                                label="Projetos"
+                                options={PROJETOS}
+                                values={formData.projetos || []}
+                                onChange={(vals) => setFormData({ ...formData, projetos: vals })}
                             />
                         </div>
                     </CardContent>
@@ -239,7 +299,7 @@ export default function CreateEventPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <ChipInput
-                            label="Como/Quanto *"
+                            label="Como/Quando *"
                             placeholder="Digite e aperte Enter (ex: Engajar colaboradores)"
                             values={formData.comoQuanto || []}
                             onChange={(vals) => setFormData({ ...formData, comoQuanto: vals })}

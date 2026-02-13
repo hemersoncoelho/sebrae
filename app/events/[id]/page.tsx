@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Copy, Edit, RefreshCw, Share, Calendar, MapPin, User, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Copy, Edit, RefreshCw, Share, Calendar, MapPin, User, CheckCircle2, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/Button";
 import { Textarea } from "@/app/components/ui/Textarea";
 import { Badge } from "@/app/components/ui/Badge";
@@ -13,7 +13,8 @@ import { generateContent } from "@/app/utils/generate";
 import { EventItem } from "@/app/types";
 import ReactMarkdown from "react-markdown";
 
-import { getEventFromBaserow } from "@/app/services/baserow";
+import { getEventFromBaserow, uploadImageToBaserow, updateEventRow } from "@/app/services/baserow";
+import { ExpandableText } from "@/app/components/ExpandableText";
 
 export default function EventDetailsPage() {
     const params = useParams();
@@ -27,6 +28,8 @@ export default function EventDetailsPage() {
     const [isSaving, setIsSaving] = React.useState(false);
     const [copySuccess, setCopySuccess] = React.useState("");
     const [isLoading, setIsLoading] = React.useState(true);
+    const [isUploading, setIsUploading] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
         const loadEvent = async () => {
@@ -47,7 +50,9 @@ export default function EventDetailsPage() {
                     title: row.Evento,
                     date: row.Data_Evento,
                     location: row.Local,
-                    organizer: row.Agente,
+                    organizer: row.Agente ? row.Agente.split(", ").filter(Boolean) : [],
+                    eixos: row.eixo ? row.eixo.split(", ").filter(Boolean) : [],
+                    projetos: row.projeto ? row.projeto.split(", ").filter(Boolean) : [],
                     coverUrl: row.Fotos?.[0]?.url || "",
                     coverBase64: "",
                     comoQuanto: row["como/quanto"] ? [row["como/quanto"]] : [],
@@ -123,6 +128,55 @@ export default function EventDetailsPage() {
         setTimeout(() => setCopySuccess(""), 2000);
     };
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event || !e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+
+        setIsUploading(true);
+
+        try {
+            // 1. Upload to Baserow
+            const uploadedFile = await uploadImageToBaserow(formData);
+
+            // 2. Update Event Row in Baserow
+            // Note: Baserow expects an array of file objects for file fields
+            // We need to fetch current photos to append or just replace. Let's replace for now or append if existing is array.
+            // Actually, based on types, Photos is {name, url}[].
+
+            const newPhotos = [{ name: uploadedFile.name, url: uploadedFile.url }];
+
+            await updateEventRow(parseInt(event.id), { Fotos: newPhotos });
+
+            // 3. Update Local State
+            const updatedEvent = {
+                ...event,
+                coverUrl: uploadedFile.url,
+                updatedAt: new Date().toISOString()
+            };
+
+            setEvent(updatedEvent);
+            saveEvent(updatedEvent); // Update local storage too
+
+            alert("Imagem atualizada com sucesso!");
+
+        } catch (error) {
+            console.error("Failed to upload image:", error);
+            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+            alert(`Erro ao enviar imagem: ${errorMessage}`);
+        } finally {
+            setIsUploading(false);
+            // Reset input
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
+    const triggerFileInput = () => {
+        fileInputRef.current?.click();
+    };
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -175,12 +229,33 @@ export default function EventDetailsPage() {
                 {/* Left Column: Metadata */}
                 <div className="lg:col-span-1 space-y-6">
                     <Card className="overflow-hidden">
-                        <div className="aspect-video w-full bg-gray-100 relative">
+                        <div className="aspect-video w-full bg-gray-100 relative group">
                             {event.coverUrl || event.coverBase64 ? (
-                                <img src={event.coverUrl || event.coverBase64} alt={event.title} className="h-full w-full object-cover" />
+                                <img src={event.coverUrl || event.coverBase64} alt={event.title} className="h-full w-full object-cover transition-opacity group-hover:opacity-90" />
                             ) : (
                                 <div className="flex h-full items-center justify-center text-gray-400">Sem imagem</div>
                             )}
+
+                            {/* Upload Overlay */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={triggerFileInput}
+                                    disabled={isUploading}
+                                    className="gap-2"
+                                >
+                                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                    {isUploading ? "Enviando..." : "Trocar Imagem"}
+                                </Button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                />
+                            </div>
                         </div>
                         <CardContent className="space-y-4 pt-6">
                             <div className="space-y-2">
@@ -197,23 +272,45 @@ export default function EventDetailsPage() {
                                 {event.organizer && (
                                     <div className="flex items-center gap-2 text-sm text-gray-600">
                                         <User className="h-4 w-4" />
-                                        {event.organizer}
+                                        {Array.isArray(event.organizer) ? event.organizer.join(", ") : event.organizer}
                                     </div>
                                 )}
                             </div>
 
-                            <div className="pt-4 border-t border-gray-100">
-                                <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Como/Quanto</h4>
-                                <div className="prose prose-neutral text-gray-500 max-w-none text-[10px] leading-tight">
-                                    <ReactMarkdown>{event.comoQuanto.join("\n\n")}</ReactMarkdown>
+                            {event.eixos && event.eixos.length > 0 && (
+                                <div className="pt-4 border-t border-gray-100">
+                                    <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Eixos</h4>
+                                    <div className="flex flex-wrap gap-1">
+                                        {event.eixos.map((eixo, i) => (
+                                            <Badge key={i} variant="outline" className="text-[10px] font-normal">
+                                                {eixo}
+                                            </Badge>
+                                        ))}
+                                    </div>
                                 </div>
+                            )}
+
+                            {event.projetos && event.projetos.length > 0 && (
+                                <div className="pt-4 border-t border-gray-100">
+                                    <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Projetos</h4>
+                                    <div className="flex flex-wrap gap-1">
+                                        {event.projetos.map((projeto, i) => (
+                                            <Badge key={i} variant="outline" className="text-[10px] font-normal">
+                                                {projeto}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="pt-4 border-t border-gray-100">
+                                <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Como/Quando</h4>
+                                <ExpandableText content={event.comoQuanto} />
                             </div>
 
                             <div className="pt-2 border-t border-gray-100 mt-2">
                                 <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Por quê?</h4>
-                                <div className="prose prose-neutral text-gray-500 max-w-none text-[10px] leading-tight">
-                                    <ReactMarkdown>{event.porQue.join("\n\n")}</ReactMarkdown>
-                                </div>
+                                <ExpandableText content={event.porQue} />
                             </div>
                         </CardContent>
                     </Card>
