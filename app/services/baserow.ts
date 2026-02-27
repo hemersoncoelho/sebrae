@@ -35,8 +35,13 @@ export const uploadImageToBaserow = async (formData: FormData): Promise<{ name: 
     if (!BASEROW_TOKEN) throw new Error("Missing BASEROW_TOKEN");
 
     // Validate file presence
-    const file = formData.get("file");
+    const file = formData.get("file") as File;
     if (!file) throw new Error("No file parameter");
+
+    // In Next.js server actions, FormData with Files can sometimes have issues when passed directly
+    // to a raw fetch. We reconstruct a new FormData to ensure correct boundary creation.
+    const newFormData = new FormData();
+    newFormData.append("file", file, file.name);
 
     const response = await fetch("https://api.baserow.io/api/user-files/upload-file/", {
         method: "POST",
@@ -44,7 +49,7 @@ export const uploadImageToBaserow = async (formData: FormData): Promise<{ name: 
             Authorization: `Token ${BASEROW_TOKEN}`,
             // Content-Type is set automatically with FormData
         },
-        body: formData,
+        body: newFormData,
     });
 
     if (!response.ok) {

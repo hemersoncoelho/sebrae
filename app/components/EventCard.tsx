@@ -40,6 +40,16 @@ export function EventCard({ event }: EventCardProps) {
             </div>
 
             <CardContent className="flex-1 p-4">
+                {event.organizer && event.organizer.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                        {event.organizer.map((org, index) => (
+                            <Badge key={index} variant="secondary" className="text-[10px] font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+                                {org}
+                            </Badge>
+                        ))}
+                    </div>
+                )}
+
                 <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                     <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />

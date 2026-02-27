@@ -140,6 +140,7 @@ export default function CreateEventPage() {
                         id: eventId,
                         baserowId: baserowId, // Included Baserow ID
                         coverUrl: baserowImageUrl,
+                        fotos: baserowImageName ? [{ name: baserowImageName, url: baserowImageUrl }] : [],
                         coverBase64: baserowImageUrl ? "" : formData.coverBase64, // Send base64 if no URL
                         generated,
                         createdAt: now,
@@ -161,6 +162,7 @@ export default function CreateEventPage() {
                 projetos: formData.projetos,
                 coverBase64: baserowImageUrl ? "" : (formData.coverBase64 || ""),
                 coverUrl: baserowImageUrl,
+                fotos: baserowImageName ? [{ name: baserowImageName, url: baserowImageUrl }] : [],
                 comoQuanto: formData.comoQuanto!,
                 porQue: formData.porQue!,
                 tone: formData.tone as EventTone,

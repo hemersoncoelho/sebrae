@@ -5,6 +5,8 @@ import { cn } from "@/app/utils/cn";
 import { Upload, X } from "lucide-react";
 import { Button } from "./ui/Button";
 
+import imageCompression from "browser-image-compression";
+
 interface UploadFieldProps {
     value: string;
     onChange: (base64: string, file: File | null) => void;
@@ -15,15 +17,44 @@ interface UploadFieldProps {
 export function UploadField({ value, onChange, label, error }: UploadFieldProps) {
     const inputRef = React.useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = React.useState(false);
+    const [isCompressing, setIsCompressing] = React.useState(false);
 
-    const handleFile = (file: File) => {
+    const handleFile = async (file: File) => {
         if (!file.type.startsWith("image/")) return;
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            onChange(reader.result as string, file);
-        };
-        reader.readAsDataURL(file);
+        setIsCompressing(true);
+        try {
+            const options = {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1200,
+                useWebWorker: true,
+                onProgress: (p: number) => console.log(`Compressing: ${p}%`),
+            };
+
+            const compressedFileStr = await imageCompression(file, options);
+
+            // Create a new File object from the Blob to pass up
+            const compressedFile = new File([compressedFileStr], file.name, {
+                type: compressedFileStr.type,
+                lastModified: Date.now(),
+            });
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                onChange(reader.result as string, compressedFile);
+            };
+            reader.readAsDataURL(compressedFile);
+        } catch (error) {
+            console.error("Compression Error:", error);
+            // Fallback to original if compression fails
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                onChange(reader.result as string, file);
+            };
+            reader.readAsDataURL(file);
+        } finally {
+            setIsCompressing(false);
+        }
     };
 
     const handleDrop = (e: React.DragEvent) => {

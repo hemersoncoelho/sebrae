@@ -12,6 +12,7 @@ import { getEvent, saveEvent } from "@/app/utils/storage";
 import { generateContent } from "@/app/utils/generate";
 import { EventItem } from "@/app/types";
 import ReactMarkdown from "react-markdown";
+import imageCompression from "browser-image-compression";
 
 import { getEventFromBaserow, uploadImageToBaserow, updateEventRow } from "@/app/services/baserow";
 import { ExpandableText } from "@/app/components/ExpandableText";
@@ -22,7 +23,7 @@ export default function EventDetailsPage() {
     const id = params.id as string;
 
     const [event, setEvent] = React.useState<EventItem | null>(null);
-    const [activeTab, setActiveTab] = React.useState<"summary" | "article">("summary");
+    const [activeTab, setActiveTab] = React.useState<"summary" | "article" | "fotos">("summary");
     const [editedContent, setEditedContent] = React.useState({ summary: "", article: "" });
     const [isEditing, setIsEditing] = React.useState(false);
     const [isSaving, setIsSaving] = React.useState(false);
@@ -55,6 +56,7 @@ export default function EventDetailsPage() {
                     projetos: row.projeto ? row.projeto.split(", ").filter(Boolean) : [],
                     coverUrl: row.Fotos?.[0]?.url || "",
                     coverBase64: "",
+                    fotos: row.Fotos || [],
                     comoQuanto: row["como/quanto"] ? [row["como/quanto"]] : [],
                     porQue: row.porque ? [row.porque] : [],
                     tone: "jornalistico",
@@ -131,29 +133,43 @@ export default function EventDetailsPage() {
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!event || !e.target.files || e.target.files.length === 0) return;
 
-        const file = e.target.files[0];
-        const formData = new FormData();
-        formData.append("file", file);
-
+        let file = e.target.files[0];
         setIsUploading(true);
 
         try {
+            // Compress Image
+            const options = {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1200,
+                useWebWorker: true,
+            };
+            const compressedBlob = await imageCompression(file, options);
+            file = new File([compressedBlob], file.name, {
+                type: compressedBlob.type,
+                lastModified: Date.now(),
+            });
+
+            const formData = new FormData();
+            formData.append("file", file);
+
             // 1. Upload to Baserow
             const uploadedFile = await uploadImageToBaserow(formData);
 
             // 2. Update Event Row in Baserow
-            // Note: Baserow expects an array of file objects for file fields
-            // We need to fetch current photos to append or just replace. Let's replace for now or append if existing is array.
-            // Actually, based on types, Photos is {name, url}[].
-
-            const newPhotos = [{ name: uploadedFile.name, url: uploadedFile.url }];
+            // Baserow expects an array of file objects for file fields. We append the new photo.
+            const existingPhotos = event.fotos || [];
+            if (!existingPhotos.find(p => p.url === event.coverUrl) && event.coverUrl) {
+                // In case the coverUrl exists but isn't in fotos (legacy data)
+            }
+            const newPhotos = [...existingPhotos, { name: uploadedFile.name, url: uploadedFile.url }];
 
             await updateEventRow(parseInt(event.id), { Fotos: newPhotos });
 
             // 3. Update Local State
             const updatedEvent = {
                 ...event,
-                coverUrl: uploadedFile.url,
+                coverUrl: event.coverUrl || uploadedFile.url, // Keep first image as cover if empty
+                fotos: newPhotos,
                 updatedAt: new Date().toISOString()
             };
 
@@ -257,6 +273,23 @@ export default function EventDetailsPage() {
                                 />
                             </div>
                         </div>
+
+                        {event.fotos && event.fotos.length > 1 && (
+                            <div className="flex gap-2 overflow-x-auto p-2 scrollbar-hide">
+                                {event.fotos.map((photo, idx) => (
+                                    <img
+                                        key={idx}
+                                        src={photo.url}
+                                        alt={`Foto ${idx + 1}`}
+                                        className="h-16 w-16 object-cover rounded-md flex-shrink-0 cursor-pointer border border-gray-200 hover:opacity-80 transition-opacity"
+                                        onClick={() => {
+                                            const updated = { ...event, coverUrl: photo.url };
+                                            setEvent(updated);
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
                         <CardContent className="space-y-4 pt-6">
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -270,9 +303,21 @@ export default function EventDetailsPage() {
                                     </div>
                                 )}
                                 {event.organizer && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                                        <User className="h-4 w-4" />
-                                        {Array.isArray(event.organizer) ? event.organizer.join(", ") : event.organizer}
+                                    <div className="flex items-start gap-2 text-sm text-gray-600">
+                                        <User className="h-4 w-4 mt-0.5" />
+                                        <div className="flex flex-wrap gap-1">
+                                            {Array.isArray(event.organizer) ? (
+                                                event.organizer.map((org, index) => (
+                                                    <Badge key={index} variant="secondary" className="text-[10px] font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+                                                        {org}
+                                                    </Badge>
+                                                ))
+                                            ) : (
+                                                <Badge variant="secondary" className="text-[10px] font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+                                                    {event.organizer}
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -319,20 +364,27 @@ export default function EventDetailsPage() {
                 {/* Right Column: Content Editor */}
                 <div className="lg:col-span-2 space-y-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex bg-white p-1 rounded-lg border border-gray-200 shadow-sm overflow-x-auto scrollbar-hide">
                             <button
                                 onClick={() => setActiveTab("summary")}
-                                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === "summary" ? "bg-blue-50 text-blue-700 shadow-sm" : "text-gray-600 hover:bg-gray-50"
+                                className={`px-4 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap ${activeTab === "summary" ? "bg-blue-50 text-blue-700 shadow-sm" : "text-gray-600 hover:bg-gray-50"
                                     }`}
                             >
                                 Resumo
                             </button>
                             <button
                                 onClick={() => setActiveTab("article")}
-                                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === "article" ? "bg-blue-50 text-blue-700 shadow-sm" : "text-gray-600 hover:bg-gray-50"
+                                className={`px-4 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap ${activeTab === "article" ? "bg-blue-50 text-blue-700 shadow-sm" : "text-gray-600 hover:bg-gray-50"
                                     }`}
                             >
                                 Matéria
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("fotos")}
+                                className={`px-4 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap ${activeTab === "fotos" ? "bg-blue-50 text-blue-700 shadow-sm" : "text-gray-600 hover:bg-gray-50"
+                                    }`}
+                            >
+                                Fotos
                             </button>
                         </div>
 
@@ -350,7 +402,7 @@ export default function EventDetailsPage() {
 
                     <Card className="min-h-[500px] flex flex-col">
                         <CardContent className="flex-1 p-0">
-                            {isEditing ? (
+                            {isEditing && activeTab !== "fotos" ? (
                                 <Textarea
                                     value={activeTab === "summary" ? editedContent.summary : editedContent.article}
                                     onChange={(e) =>
@@ -362,6 +414,36 @@ export default function EventDetailsPage() {
                                     className="w-full h-full min-h-[500px] border-0 focus:ring-0 p-6 text-base leading-relaxed resize-none rounded-2xl"
                                     placeholder="O conteúdo gerado aparecerá aqui..."
                                 />
+                            ) : activeTab === "fotos" ? (
+                                <div className="p-8">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-xl font-bold text-gray-800">Galeria de Fotos</h3>
+                                        <Button onClick={triggerFileInput} disabled={isUploading} size="sm" className="gap-2">
+                                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                            Adicionar Foto
+                                        </Button>
+                                    </div>
+                                    {(!event.fotos || event.fotos.length === 0) ? (
+                                        <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                            <Upload className="h-10 w-10 text-gray-400 mb-4" />
+                                            <p className="text-gray-500 font-medium">Nenhuma foto adicionada ainda.</p>
+                                            <p className="text-sm text-gray-400 mt-1">Clique no botão acima para enviar fotos para este evento.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                            {event.fotos.map((photo, idx) => (
+                                                <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-gray-200">
+                                                    <img src={photo.url} alt={`Foto do evento ${idx + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                        <a href={photo.url} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-sm transition-colors text-white">
+                                                            <Share className="h-4 w-4" />
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="p-8 prose prose-lg prose-blue max-w-none">
                                     <ReactMarkdown>

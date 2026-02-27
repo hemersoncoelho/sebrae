@@ -86,6 +86,7 @@ export default function EventsPage() {
                     eixos: row.eixo ? row.eixo.split(", ").filter(Boolean) : [],
                     projetos: row.projeto ? row.projeto.split(", ").filter(Boolean) : [],
                     coverUrl: row.Fotos?.[0]?.url || "",
+                    fotos: row.Fotos || [],
                     porQue: row.porque ? row.porque.split(",").map((s: string) => s.trim()) : [],
                     comoQuanto: row["como/quanto"] ? row["como/quanto"].split(",").map((s: string) => s.trim()) : [],
                     tone: "jornalistico", // Default as it's not in Baserow yet
