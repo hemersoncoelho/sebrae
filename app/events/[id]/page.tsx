@@ -14,8 +14,8 @@ import { EventItem } from "@/app/types";
 import ReactMarkdown from "react-markdown";
 import imageCompression from "browser-image-compression";
 import { EventReportTemplate } from "@/app/components/EventReportTemplate";
-// @ts-ignore
-import html2pdf from "html2pdf.js";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 import { getEventFromBaserow, uploadImageToBaserow, updateEventRow } from "@/app/services/baserow";
 import { ExpandableText } from "@/app/components/ExpandableText";
@@ -141,17 +141,46 @@ export default function EventDetailsPage() {
         setIsExporting(true);
         try {
             const element = reportRef.current;
-            const opt: any = {
-                margin: 10, // mm
-                filename: `Relatorio_${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
 
-            // Use html2pdf to generate and save the PDF
-            await html2pdf().set(opt).from(element).save();
+            // Remove the 'hidden' class temporarily so html2canvas can capture the element
+            element.classList.remove('hidden');
 
+            const canvas = await html2canvas(element, {
+                scale: 2, // 2x for better crisp resolution
+                useCORS: true,
+                logging: false,
+                windowWidth: 800, // Enforce the template's max width during capture
+            });
+
+            // Add 'hidden' back
+            element.classList.add('hidden');
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.98);
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+            });
+
+            // A4 dimensions are 210 x 297 mm
+            const pdfWidth = 210;
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            // Add image to PDF (position x=0, y=0)
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+            // If the content is taller than 1 page, we need to add pages (pagination)
+            let heightLeft = pdfHeight - 297;
+            let position = 0 - 297;
+
+            while (heightLeft > 0) {
+                pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+                heightLeft -= 297;
+                position -= 297;
+            }
+
+            pdf.save(`Relatorio_${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
         } catch (error) {
             console.error("Failed to export PDF:", error);
             alert("Erro ao exportar PDF.");
@@ -514,7 +543,7 @@ export default function EventDetailsPage() {
 
             {/* Hidden PDF Export Template */}
             {event && (
-                <div style={{ display: "none" }}>
+                <div className="hidden absolute left-[-9999px] top-0">
                     <EventReportTemplate ref={reportRef} event={event} />
                 </div>
             )}
