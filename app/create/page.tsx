@@ -28,9 +28,20 @@ const ORGANIZERS = [
 const EIXOS = [
     "Ambiente de Negócios",
     "Rede de Atendimento",
-    "Cultura Empreededora",
+    "Cultura Empreendedora",
     "Ecossistema de Inovação",
     "Competitividade Empresarial"
+];
+
+const PUBLICO_OPTIONS = [
+    "Artesão",
+    "EPP",
+    "ME",
+    "MEI",
+    "Potencial Empreendedor",
+    "Potencial Empresário",
+    "Produtor Rural",
+    "Estudante"
 ];
 
 const PROJETOS = [
@@ -64,6 +75,8 @@ export default function CreateEventPage() {
         organizer: [],
         eixos: [],
         projetos: [],
+        publico: [],
+        quantidade: undefined,
         coverBase64: "",
         comoQuanto: [],
         porQue: [],
@@ -120,6 +133,8 @@ export default function CreateEventPage() {
                     Agente: formData.organizer ? formData.organizer.join(", ") : "",
                     eixo: formData.eixos ? formData.eixos.join(", ") : "",
                     projeto: formData.projetos ? formData.projetos.join(", ") : "",
+                    publico: formData.publico ? formData.publico.join(", ") : "",
+                    quantidade: formData.quantidade || 0,
                     Fotos: baserowImageName ? [{ name: baserowImageName, url: baserowImageUrl }] : [],
                     "como/quanto": formData.comoQuanto!.join(", "),
                     porque: formData.porQue!.join(", "),
@@ -160,6 +175,8 @@ export default function CreateEventPage() {
                 organizer: formData.organizer,
                 eixos: formData.eixos,
                 projetos: formData.projetos,
+                publico: formData.publico,
+                quantidade: formData.quantidade,
                 coverBase64: baserowImageUrl ? "" : (formData.coverBase64 || ""),
                 coverUrl: baserowImageUrl,
                 fotos: baserowImageName ? [{ name: baserowImageName, url: baserowImageUrl }] : [],
@@ -290,6 +307,27 @@ export default function CreateEventPage() {
                                 values={formData.projetos || []}
                                 onChange={(vals) => setFormData({ ...formData, projetos: vals })}
                             />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <MultiSelect
+                                    label="Público (Opcional)"
+                                    options={PUBLICO_OPTIONS}
+                                    values={formData.publico || []}
+                                    onChange={(vals) => setFormData({ ...formData, publico: vals })}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <label className="text-sm font-medium">Quantidade de Público (Opcional)</label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    placeholder="Ex: 150"
+                                    value={formData.quantidade || ""}
+                                    onChange={(e) => setFormData({ ...formData, quantidade: parseInt(e.target.value) || undefined })}
+                                />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

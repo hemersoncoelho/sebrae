@@ -13,6 +13,7 @@ import { MonthlyEventsChart } from "@/app/components/MonthlyEventsChart";
 import { EventsByAnalystChart } from "@/app/components/EventsByAnalystChart";
 import { ProjetosChart } from "@/app/components/ProjetosChart";
 import { EixosChart } from "@/app/components/EixosChart";
+import { PublicoChart } from "@/app/components/PublicoChart";
 import { getEvents as fetchLocalEvents } from "@/app/utils/storage";
 import { parseDate } from "@/app/utils/formatters";
 
@@ -40,6 +41,8 @@ export default function EventsPage() {
     }, [events]);
 
     // Extract available Projects
+    const [visibleCount, setVisibleCount] = React.useState(10);
+
     const availableProjects = React.useMemo(() => {
         const projects = new Set<string>();
         events.forEach(event => {
@@ -85,6 +88,8 @@ export default function EventsPage() {
                     organizer: row.Agente ? row.Agente.split(", ").filter(Boolean) : [],
                     eixos: row.eixo ? row.eixo.split(", ").filter(Boolean) : [],
                     projetos: row.projeto ? row.projeto.split(", ").filter(Boolean) : [],
+                    publico: row.publico ? row.publico.split(", ").filter(Boolean) : [],
+                    quantidade: row.quantidade || 0,
                     coverUrl: row.Fotos?.[0]?.url || "",
                     fotos: row.Fotos || [],
                     porQue: row.porque ? row.porque.split(",").map((s: string) => s.trim()) : [],
@@ -166,6 +171,7 @@ export default function EventsPage() {
         }
 
         setFilteredEvents(filtered);
+        setVisibleCount(10); // Reset visible count on filter change
     }, [search, events, selectedMonth, selectedProject, selectedEixo, selectedOrganizer]);
 
     const clearFilters = () => {
@@ -174,6 +180,11 @@ export default function EventsPage() {
         setSelectedProject("Todos");
         setSelectedEixo("Todos");
         setSelectedOrganizer("Todos");
+        setVisibleCount(10);
+    };
+
+    const handleLoadMore = () => {
+        setVisibleCount(prev => prev + 10);
     };
 
     const hasActiveFilters = search || selectedMonth !== "Todos" || selectedProject !== "Todos" || selectedEixo !== "Todos" || selectedOrganizer !== "Todos";
@@ -339,10 +350,24 @@ export default function EventsPage() {
                                     </Link>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {filteredEvents.map((event) => (
-                                        <EventCard key={event.id} event={event} />
-                                    ))}
+                                <div className="space-y-8">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {filteredEvents.slice(0, visibleCount).map((event) => (
+                                            <EventCard key={event.id} event={event} />
+                                        ))}
+                                    </div>
+
+                                    {visibleCount < filteredEvents.length && (
+                                        <div className="flex justify-center pt-4 border-t border-gray-100">
+                                            <Button
+                                                variant="outline"
+                                                onClick={handleLoadMore}
+                                                className="w-full sm:w-auto"
+                                            >
+                                                Exibir mais eventos ({filteredEvents.length - visibleCount} restantes)
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -354,7 +379,35 @@ export default function EventsPage() {
                             <span className="text-sm text-gray-500">Visão Geral</span>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {/* Top Metrics Banner */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
+                                    <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Total de Pessoas Alcançadas</p>
+                                    <h3 className="text-2xl font-bold text-gray-900">
+                                        {filteredEvents.reduce((acc, event) => acc + (event.quantidade || 0), 0).toLocaleString('pt-BR')}
+                                    </h3>
+                                </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center">
+                                    <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Eventos Cadastrados</p>
+                                    <h3 className="text-2xl font-bold text-gray-900">{filteredEvents.length}</h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
                             <div className="xl:col-span-1">
                                 <EventsByAnalystChart events={filteredEvents} /> {/* Changed to filteredEvents */}
                             </div>
@@ -364,7 +417,10 @@ export default function EventsPage() {
                             <div className="xl:col-span-1">
                                 <EixosChart events={filteredEvents} /> {/* Changed to filteredEvents */}
                             </div>
-                            <div className="xl:col-span-3">
+                            <div className="xl:col-span-1">
+                                <PublicoChart events={filteredEvents} />
+                            </div>
+                            <div className="xl:col-span-4">
                                 <MonthlyEventsChart events={filteredEvents} /> {/* Changed to filteredEvents */}
                             </div>
                         </div>

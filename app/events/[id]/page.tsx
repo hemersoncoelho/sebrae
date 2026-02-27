@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Copy, Edit, RefreshCw, Share, Calendar, MapPin, User, CheckCircle2, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Copy, Edit, RefreshCw, Share, Calendar, MapPin, User, Users, CheckCircle2, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/Button";
 import { Textarea } from "@/app/components/ui/Textarea";
 import { Badge } from "@/app/components/ui/Badge";
@@ -345,6 +345,29 @@ export default function EventDetailsPage() {
                                             </Badge>
                                         ))}
                                     </div>
+                                </div>
+                            )}
+
+                            {event.publico && event.publico.length > 0 && (
+                                <div className="pt-4 border-t border-gray-100">
+                                    <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Público</h4>
+                                    <div className="flex flex-wrap gap-1">
+                                        {event.publico.map((pub, i) => (
+                                            <Badge key={i} variant="secondary" className="text-[10px] font-normal bg-blue-50 text-blue-700">
+                                                {pub}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {event.quantidade && (
+                                <div className="pt-4 border-t border-gray-100">
+                                    <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Quantidade de Pessoas/Atendimentos</h4>
+                                    <span className="text-sm font-semibold text-gray-900 border border-gray-200 px-3 py-1 rounded-md inline-flex items-center gap-2 bg-gray-50">
+                                        <Users className="h-4 w-4 text-blue-500" />
+                                        {event.quantidade}
+                                    </span>
                                 </div>
                             )}
 

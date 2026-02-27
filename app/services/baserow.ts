@@ -13,6 +13,8 @@ interface BaserowEventData {
     porque: string;
     eixo?: string;
     projeto?: string;
+    publico?: string;
+    quantidade?: number;
 }
 
 interface BaserowEventResponse {
@@ -29,6 +31,8 @@ interface BaserowEventResponse {
     materia: string;
     eixo?: string;
     projeto?: string;
+    publico?: string;
+    quantidade?: number;
 }
 
 export const uploadImageToBaserow = async (formData: FormData): Promise<{ name: string; url: string }> => {

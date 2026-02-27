@@ -9,6 +9,8 @@ export interface EventItem {
   coverBase64?: string;
   coverUrl?: string;
   fotos?: { name: string; url: string }[];
+  publico?: string[];
+  quantidade?: number;
   comoQuanto: string[];
   porQue: string[];
   tone: "jornalistico" | "institucional" | "descontraido";
