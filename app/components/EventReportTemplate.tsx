@@ -18,7 +18,7 @@ export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportT
     const formattedShortDate = !isNaN(day) ? `${day} de ${month.charAt(0).toUpperCase() + month.slice(1)}` : formattedDate;
 
     return (
-        <div ref={ref} className="bg-white text-black w-[800px] max-w-[800px] min-h-[1123px] mx-auto overflow-hidden relative" style={{ fontFamily: "Arial, sans-serif" }}>
+        <div ref={ref} className="bg-white text-black w-[800px] max-w-[800px] min-h-[1123px] mx-auto overflow-hidden relative print:w-full print:max-w-none print:h-auto print:min-h-0" style={{ fontFamily: "Arial, sans-serif" }}>
 
             {/* HEADER - Curved Blue Shape with SEBRAE Logo */}
             <div className="relative w-full h-40 bg-white">

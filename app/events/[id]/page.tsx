@@ -14,8 +14,6 @@ import { EventItem } from "@/app/types";
 import ReactMarkdown from "react-markdown";
 import imageCompression from "browser-image-compression";
 import { EventReportTemplate } from "@/app/components/EventReportTemplate";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 import { getEventFromBaserow, uploadImageToBaserow, updateEventRow } from "@/app/services/baserow";
 import { ExpandableText } from "@/app/components/ExpandableText";
@@ -135,58 +133,9 @@ export default function EventDetailsPage() {
         setTimeout(() => setCopySuccess(""), 2000);
     };
 
-    const handleExport = async () => {
-        if (!event || !reportRef.current) return;
-
-        setIsExporting(true);
-        try {
-            const element = reportRef.current;
-
-            // Remove the 'hidden' class temporarily so html2canvas can capture the element
-            element.classList.remove('hidden');
-
-            const canvas = await html2canvas(element, {
-                scale: 2, // 2x for better crisp resolution
-                useCORS: true,
-                logging: false,
-                windowWidth: 800, // Enforce the template's max width during capture
-            });
-
-            // Add 'hidden' back
-            element.classList.add('hidden');
-
-            const imgData = canvas.toDataURL('image/jpeg', 0.98);
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4',
-            });
-
-            // A4 dimensions are 210 x 297 mm
-            const pdfWidth = 210;
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-            // Add image to PDF (position x=0, y=0)
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-
-            // If the content is taller than 1 page, we need to add pages (pagination)
-            let heightLeft = pdfHeight - 297;
-            let position = 0 - 297;
-
-            while (heightLeft > 0) {
-                pdf.addPage();
-                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-                heightLeft -= 297;
-                position -= 297;
-            }
-
-            pdf.save(`Relatorio_${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
-        } catch (error) {
-            console.error("Failed to export PDF:", error);
-            alert("Erro ao exportar PDF.");
-        } finally {
-            setIsExporting(false);
-        }
+    const handleExport = () => {
+        // Trigger browser's native print dialog which handles oklch colors perfectly
+        window.print();
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -263,9 +212,9 @@ export default function EventDetailsPage() {
     if (!event) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="min-h-screen bg-gray-50 pb-20 print:bg-white print:pb-0">
             {/* Header */}
-            <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-md">
+            <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-md print:hidden">
                 <div className="container mx-auto flex h-16 items-center justify-between px-4">
                     <div className="flex items-center gap-4">
                         <Link href="/events">
@@ -299,7 +248,7 @@ export default function EventDetailsPage() {
                 </div>
             </header>
 
-            <main className="container mx-auto mt-8 px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <main className="container mx-auto mt-8 px-4 grid grid-cols-1 lg:grid-cols-3 gap-8 print:hidden">
 
                 {/* Left Column: Metadata */}
                 <div className="lg:col-span-1 space-y-6">
@@ -543,7 +492,7 @@ export default function EventDetailsPage() {
 
             {/* Hidden PDF Export Template */}
             {event && (
-                <div className="hidden absolute left-[-9999px] top-0">
+                <div className="hidden print:block absolute inset-0 bg-white z-[99999] print:m-0 print:p-0">
                     <EventReportTemplate ref={reportRef} event={event} />
                 </div>
             )}
