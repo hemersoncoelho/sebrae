@@ -13,6 +13,9 @@ import { generateContent } from "@/app/utils/generate";
 import { EventItem } from "@/app/types";
 import ReactMarkdown from "react-markdown";
 import imageCompression from "browser-image-compression";
+import { EventReportTemplate } from "@/app/components/EventReportTemplate";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 
 import { getEventFromBaserow, uploadImageToBaserow, updateEventRow } from "@/app/services/baserow";
 import { ExpandableText } from "@/app/components/ExpandableText";
@@ -31,6 +34,8 @@ export default function EventDetailsPage() {
     const [isLoading, setIsLoading] = React.useState(true);
     const [isUploading, setIsUploading] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [isExporting, setIsExporting] = React.useState(false);
+    const reportRef = React.useRef<HTMLDivElement>(null);
 
     React.useEffect(() => {
         const loadEvent = async () => {
@@ -128,6 +133,31 @@ export default function EventDetailsPage() {
         navigator.clipboard.writeText(text);
         setCopySuccess(activeTab === "summary" ? "Resumo copiado!" : "Matéria copiada!");
         setTimeout(() => setCopySuccess(""), 2000);
+    };
+
+    const handleExport = async () => {
+        if (!event || !reportRef.current) return;
+
+        setIsExporting(true);
+        try {
+            const element = reportRef.current;
+            const opt: any = {
+                margin: 10, // mm
+                filename: `Relatorio_${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Use html2pdf to generate and save the PDF
+            await html2pdf().set(opt).from(element).save();
+
+        } catch (error) {
+            console.error("Failed to export PDF:", error);
+            alert("Erro ao exportar PDF.");
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -416,9 +446,9 @@ export default function EventDetailsPage() {
                                 {copySuccess ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                                 <span className="ml-2 hidden sm:inline">{copySuccess || "Copiar"}</span>
                             </Button>
-                            <Button variant="outline" size="sm" disabled title="Em breve">
-                                <Share className="h-4 w-4 mr-2" />
-                                Exportar
+                            <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting}>
+                                {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Share className="h-4 w-4 mr-2" />}
+                                {isExporting ? "Exportando..." : "Exportar PDF"}
                             </Button>
                         </div>
                     </div>
@@ -481,6 +511,13 @@ export default function EventDetailsPage() {
                     </Card>
                 </div>
             </main>
+
+            {/* Hidden PDF Export Template */}
+            {event && (
+                <div style={{ display: "none" }}>
+                    <EventReportTemplate ref={reportRef} event={event} />
+                </div>
+            )}
         </div>
     );
 }
