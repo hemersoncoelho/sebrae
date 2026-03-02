@@ -5,7 +5,7 @@ import { EventItem } from "../types";
 import { Card, CardContent, CardFooter } from "./ui/Card";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
-import { Calendar, MapPin, Eye } from "lucide-react";
+import { Calendar, MapPin, Users } from "lucide-react";
 
 interface EventCardProps {
     event: EventItem;
@@ -69,10 +69,6 @@ export function EventCard({ event }: EventCardProps) {
                     </Link>
                 </h3>
 
-                <p className="text-sm text-gray-600 line-clamp-2 mb-4">
-                    {event.generated.summary || "Sem resumo gerado."}
-                </p>
-
                 <div className="flex flex-wrap gap-2">
                     {event.porQue && event.porQue.slice(0, 1).map((obj, i) => (
                         <Badge key={i} variant="outline" className="text-[10px] font-normal">
@@ -89,8 +85,8 @@ export function EventCard({ event }: EventCardProps) {
 
             <CardFooter className="p-4 pt-0 border-t border-gray-50 bg-gray-50/50 flex items-center justify-between">
                 <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <Eye className="h-3 w-3" />
-                    {event.views || 0} views
+                    <Users className="h-3 w-3" />
+                    {event.quantidade || 0} participantes
                 </div>
                 <div className="flex gap-2">
                     <Link href={`/events/${event.id}`}>

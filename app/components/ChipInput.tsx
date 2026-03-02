@@ -43,6 +43,7 @@ export function ChipInput({ values, onChange, label, placeholder, error }: ChipI
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
+                    onBlur={handleAdd}
                     placeholder={placeholder}
                     className="flex-1"
                 />

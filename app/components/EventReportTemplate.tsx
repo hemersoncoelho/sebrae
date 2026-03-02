@@ -27,16 +27,9 @@ export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportT
                     <path fill="#7fbadded" d="M0,128L48,144C96,160,192,192,288,181.3C384,171,480,117,576,96C672,75,768,85,864,117.3C960,149,1056,203,1152,213.3C1248,224,1344,192,1392,176L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z" />
                     <path fill="#5499c7" d="M0,96L48,106.7C96,117,192,139,288,133.3C384,128,480,96,576,80C672,64,768,64,864,85.3C960,107,1056,149,1152,165.3C1248,181,1344,171,1392,165.3L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z" />
                 </svg>
-                {/* Simple Sebrae Logo fallback */}
+                {/* Original Sebrae Logo */}
                 <div className="absolute top-8 left-12 z-10">
-                    <div className="flex flex-col text-white font-bold italic tracking-tighter" style={{ fontSize: "2.5rem", lineHeight: "1" }}>
-                        SEBRAE
-                        <div className="flex flex-col gap-[3px] mt-1 ml-6 w-12">
-                            <div className="h-[4px] bg-white w-full"></div>
-                            <div className="h-[4px] bg-white w-[80%]"></div>
-                            <div className="h-[4px] bg-white w-[60%]"></div>
-                        </div>
-                    </div>
+                    <img src="/sebrae-logo.png" alt="Sebrae Logo" className="h-16 w-auto" />
                 </div>
             </div>
 
@@ -99,10 +92,10 @@ export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportT
                             </td>
                         </tr>
 
-                        {/* COMO e QUANTO */}
+                        {/* COMO */}
                         <tr>
                             <th className="bg-[#99aec2] text-black p-1.5 text-center uppercase border border-black font-bold">
-                                COMO e QUANTO?
+                                COMO?
                             </th>
                         </tr>
                         <tr>

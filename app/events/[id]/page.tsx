@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Copy, Edit, RefreshCw, Share, Calendar, MapPin, User, Users, CheckCircle2, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Copy, Edit, RefreshCw, Share, Calendar, MapPin, User, Users, CheckCircle2, Upload, Loader2, Database } from "lucide-react";
 import { Button } from "@/app/components/ui/Button";
 import { Textarea } from "@/app/components/ui/Textarea";
 import { Badge } from "@/app/components/ui/Badge";
@@ -35,64 +35,79 @@ export default function EventDetailsPage() {
     const [isExporting, setIsExporting] = React.useState(false);
     const reportRef = React.useRef<HTMLDivElement>(null);
 
-    React.useEffect(() => {
-        const loadEvent = async () => {
-            // 1. Try Local Storage first
+    const loadEvent = React.useCallback(async (forceRefresh = false) => {
+        setIsLoading(true);
+
+        try {
+            // 1. Fetch from Baserow first to get real data (webhook updates)
+            const row = await getEventFromBaserow(id);
+            const mappedEvent: EventItem = {
+                id: row.id.toString(),
+                title: row.Evento,
+                date: row.Data_Evento,
+                location: row.Local,
+                organizer: row.Agente ? row.Agente.split(", ").filter(Boolean) : [],
+                eixos: row.eixo ? row.eixo.split(", ").filter(Boolean) : [],
+                projetos: row.projeto ? row.projeto.split(", ").filter(Boolean) : [],
+                publico: row.publico ? row.publico.split(", ").filter(Boolean) : [],
+                quantidade: row.quantidade || 0,
+                coverUrl: row.Fotos?.[0]?.url || "",
+                coverBase64: "",
+                fotos: row.Fotos || [],
+                comoQuanto: row["como/quanto"] ? [row["como/quanto"]] : [],
+                porQue: row.porque ? [row.porque] : [],
+                tone: "jornalistico",
+                length: "medio",
+                cta: false,
+                status: "Publicado",
+                views: 0,
+                generated: {
+                    summary: row.resumo || "",
+                    article: row.materia || ""
+                },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+
+            // 2. Merge with Local Storage if needed
+            const localData = getEvent(id);
+            if (localData) {
+                if (!mappedEvent.generated.summary && localData.generated?.summary) {
+                    mappedEvent.generated.summary = localData.generated.summary;
+                }
+                if (!mappedEvent.generated.article && localData.generated?.article) {
+                    mappedEvent.generated.article = localData.generated.article;
+                }
+                if (!mappedEvent.coverUrl && localData.coverBase64) {
+                    mappedEvent.coverBase64 = localData.coverBase64;
+                }
+            } else if (!mappedEvent.generated.summary && !mappedEvent.generated.article) {
+                // Generate fake content only if strictly empty
+                const generatedContent = generateContent(mappedEvent);
+                mappedEvent.generated = generatedContent;
+            }
+
+            setEvent(mappedEvent);
+            setEditedContent(mappedEvent.generated);
+            saveEvent(mappedEvent); // Sync back to local storage
+        } catch (error) {
+            console.error("Failed to fetch event", error);
+            // Fallback to local storage
             const localData = getEvent(id);
             if (localData) {
                 setEvent(localData);
                 setEditedContent(localData.generated);
-                setIsLoading(false);
-                return;
-            }
-
-            // 2. Try Baserow
-            try {
-                const row = await getEventFromBaserow(id);
-                const mappedEvent: EventItem = {
-                    id: row.id.toString(),
-                    title: row.Evento,
-                    date: row.Data_Evento,
-                    location: row.Local,
-                    organizer: row.Agente ? row.Agente.split(", ").filter(Boolean) : [],
-                    eixos: row.eixo ? row.eixo.split(", ").filter(Boolean) : [],
-                    projetos: row.projeto ? row.projeto.split(", ").filter(Boolean) : [],
-                    coverUrl: row.Fotos?.[0]?.url || "",
-                    coverBase64: "",
-                    fotos: row.Fotos || [],
-                    comoQuanto: row["como/quanto"] ? [row["como/quanto"]] : [],
-                    porQue: row.porque ? [row.porque] : [],
-                    tone: "jornalistico",
-                    length: "medio",
-                    cta: false,
-                    status: "Publicado",
-                    views: 0,
-                    generated: {
-                        summary: row.resumo || "",
-                        article: row.materia || ""
-                    },
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                };
-
-                // Only generate if fields are empty
-                if (!mappedEvent.generated.summary && !mappedEvent.generated.article) {
-                    const generatedContent = generateContent(mappedEvent);
-                    mappedEvent.generated = generatedContent;
-                }
-
-                setEvent(mappedEvent);
-                setEditedContent(mappedEvent.generated);
-            } catch (error) {
-                console.error("Failed to fetch event", error);
+            } else {
                 router.push("/events");
-            } finally {
-                setIsLoading(false);
             }
-        };
-
-        loadEvent();
+        } finally {
+            setIsLoading(false);
+        }
     }, [id, router]);
+
+    React.useEffect(() => {
+        loadEvent();
+    }, [loadEvent]);
 
     // Debounce save
     React.useEffect(() => {
@@ -232,6 +247,10 @@ export default function EventDetailsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => loadEvent(true)} title="Atualizar do Banco">
+                            <Database className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Atualizar</span>
+                        </Button>
                         <Button variant="outline" size="sm" onClick={handleRegenerate} title="Regenerar conteúdo">
                             <RefreshCw className="h-4 w-4 sm:mr-2" />
                             <span className="hidden sm:inline">Regenerar</span>

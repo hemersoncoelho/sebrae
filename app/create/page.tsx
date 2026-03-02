@@ -101,7 +101,6 @@ export default function CreateEventPage() {
         setIsLoading(true);
 
         try {
-            const eventId = uuidv4();
             const now = new Date().toISOString();
 
             // 1. Generate Content
@@ -141,7 +140,12 @@ export default function CreateEventPage() {
                 });
             } catch (err) {
                 console.error("Failed to create row in Baserow", err);
+                alert("Erro ao salvar no banco de dados. Tente novamente.");
+                setIsLoading(false);
+                return;
             }
+
+            const eventId = baserowId.toString();
 
             // 4. Webhook Integration
             try {

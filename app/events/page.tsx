@@ -99,7 +99,7 @@ export default function EventsPage() {
                     cta: false,          // Default
                     status: "Publicado",
                     views: 0,
-                    generated: { summary: "", article: "" }, // Content not stored in Baserow yet based on schema
+                    generated: { summary: row.resumo || "", article: row.materia || "" },
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 }));
@@ -380,7 +380,7 @@ export default function EventsPage() {
                         </div>
 
                         {/* Top Metrics Banner */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
                                 <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
                                     <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -390,7 +390,7 @@ export default function EventsPage() {
                                 <div>
                                     <p className="text-sm font-medium text-gray-500">Total de Pessoas Alcançadas</p>
                                     <h3 className="text-2xl font-bold text-gray-900">
-                                        {filteredEvents.reduce((acc, event) => acc + (event.quantidade || 0), 0).toLocaleString('pt-BR')}
+                                        {filteredEvents.reduce((acc, event) => acc + Number(event.quantidade || 0), 0).toLocaleString('pt-BR')}
                                     </h3>
                                 </div>
                             </div>
