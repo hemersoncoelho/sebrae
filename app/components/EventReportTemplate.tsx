@@ -6,10 +6,11 @@ import { parseDate } from "../utils/formatters";
 
 interface EventReportTemplateProps {
     event: EventItem;
+    editedContent?: { summary: string; article: string };
 }
 
 // A hidden component but styled explicitly to look like the provided A4 PDF when captured by html2pdf
-export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportTemplateProps>(({ event }, ref) => {
+export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportTemplateProps>(({ event, editedContent }, ref) => {
     // Helper to format date just like "15 de Janeiro" or full date
     const formattedDate = parseDate(event.date) || "Data não informada";
     const dateObj = new Date(event.date);
@@ -143,7 +144,7 @@ export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportT
                         </tr>
                         <tr>
                             <td className="p-4 text-justify italic border border-black bg-white leading-relaxed whitespace-pre-wrap">
-                                {event.generated?.summary || "-"}
+                                {editedContent?.summary || event.generated?.summary || "-"}
                             </td>
                         </tr>
 
@@ -155,7 +156,7 @@ export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportT
                         </tr>
                         <tr>
                             <td className="p-4 text-justify italic border border-black bg-white leading-relaxed whitespace-pre-wrap">
-                                {event.generated?.article || "-"}
+                                {editedContent?.article || event.generated?.article || "-"}
                             </td>
                         </tr>
 

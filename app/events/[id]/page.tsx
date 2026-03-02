@@ -512,7 +512,7 @@ export default function EventDetailsPage() {
             {/* Hidden PDF Export Template */}
             {event && (
                 <div className="hidden print:block absolute inset-0 bg-white z-[99999] print:m-0 print:p-0">
-                    <EventReportTemplate ref={reportRef} event={event} />
+                    <EventReportTemplate ref={reportRef} event={event} editedContent={editedContent} />
                 </div>
             )}
         </div>
