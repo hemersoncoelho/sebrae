@@ -100,11 +100,11 @@ export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportT
                         </tr>
                         <tr>
                             <td className="p-4 text-justify italic border border-black bg-white leading-relaxed whitespace-pre-wrap">
-                                {/* Format ComoQuanto and Materia/Summary into paragraphs. Fallback to summary if Materia isn't there */}
+                                {/* Format ComoQuanto into paragraphs */}
                                 {event.comoQuanto && event.comoQuanto.length > 0 ? (
                                     event.comoQuanto.map((p, i) => <p key={i} className="mb-2 indent-8">{p}</p>)
                                 ) : (
-                                    <p className="indent-8">{event.generated?.article || event.generated?.summary || "Sem descrição prévia registrada."}</p>
+                                    <p className="indent-8">-</p>
                                 )}
                                 {event.quantidade && (
                                     <p className="mt-4 indent-8 font-semibold">
@@ -132,6 +132,30 @@ export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportT
                                 {event.porQue && event.porQue.length > 0 ? (
                                     event.porQue.map((p, i) => <p key={i} className="indent-8">{p}</p>)
                                 ) : null}
+                            </td>
+                        </tr>
+
+                        {/* RESUMO */}
+                        <tr>
+                            <th className="bg-[#99aec2] text-black p-1.5 text-center uppercase border border-black font-bold">
+                                RESUMO
+                            </th>
+                        </tr>
+                        <tr>
+                            <td className="p-4 text-justify italic border border-black bg-white leading-relaxed whitespace-pre-wrap">
+                                {event.generated?.summary || "-"}
+                            </td>
+                        </tr>
+
+                        {/* MATÉRIA */}
+                        <tr>
+                            <th className="bg-[#99aec2] text-black p-1.5 text-center uppercase border border-black font-bold">
+                                MATÉRIA
+                            </th>
+                        </tr>
+                        <tr>
+                            <td className="p-4 text-justify italic border border-black bg-white leading-relaxed whitespace-pre-wrap">
+                                {event.generated?.article || "-"}
                             </td>
                         </tr>
 
