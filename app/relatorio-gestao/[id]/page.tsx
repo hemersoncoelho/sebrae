@@ -61,7 +61,7 @@ export default function GestaoReportDetailPage() {
                 </div>
             </header>
 
-            <main className="container mx-auto mt-8 max-w-4xl px-4 space-y-6 print:mt-0 print:px-0">
+            <main className="container mx-auto mt-8 max-w-4xl px-4 flex flex-col gap-8 print:mt-0 print:px-0">
                 {/* Cabeçalho do Relatório */}
                 <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm overflow-hidden relative">
                     <div className="absolute top-0 right-0 p-8">
@@ -96,9 +96,9 @@ export default function GestaoReportDetailPage() {
                 {/* Grid de Conteúdo */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Coluna Principal */}
-                    <div className="md:col-span-2 space-y-6">
+                    <div className="md:col-span-2 space-y-6 flex flex-col">
                         {/* Ações */}
-                        <Card className="border-none shadow-sm h-full">
+                        <Card className="border-none shadow-sm">
                             <CardHeader className="border-b border-gray-50 pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2 text-gray-800">
                                     <FileCheck className="h-5 w-5 text-green-600" />
@@ -113,7 +113,7 @@ export default function GestaoReportDetailPage() {
                         </Card>
 
                         {/* Resultados */}
-                        <Card className="border-none shadow-sm h-full">
+                        <Card className="border-none shadow-sm">
                             <CardHeader className="border-b border-gray-50 pb-4">
                                 <CardTitle className="text-lg flex items-center gap-2 text-gray-800">
                                     <TrendingUp className="h-5 w-5 text-blue-600" />
