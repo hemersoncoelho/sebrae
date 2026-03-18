@@ -29,6 +29,7 @@ interface BaserowEventResponse {
     porque: string;
     resumo: string;
     materia: string;
+    texto_final_formatado?: string;
     eixo?: string;
     projeto?: string;
     publico?: string;

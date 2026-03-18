@@ -63,7 +63,7 @@ export default function EventDetailsPage() {
                 views: 0,
                 generated: {
                     summary: row.resumo || "",
-                    article: row.materia || ""
+                    article: row.texto_final_formatado || row.materia || ""
                 },
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),

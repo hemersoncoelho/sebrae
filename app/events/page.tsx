@@ -253,6 +253,12 @@ export default function EventsPage() {
                             <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-t-full" />
                         )}
                     </button>
+                    <Link
+                        href="/relatorio-gestao"
+                        className="pb-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                        Relatório de Gestão
+                    </Link>
                 </div>
 
                 {/* Filters Bar - Visible on both tabs for Month, but other filters only for Eventos list if desired, or all. 
