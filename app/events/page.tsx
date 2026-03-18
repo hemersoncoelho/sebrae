@@ -30,14 +30,20 @@ export default function EventsPage() {
 
     // Extract available months from events
     const availableMonths = React.useMemo(() => {
-        const months = new Set<string>();
+        const monthMap = new Map<string, number>();
         events.forEach(event => {
             const date = new Date(event.date);
+            const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getTime();
             const monthYear = date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
             const formatted = monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
-            months.add(formatted);
+            if (!monthMap.has(formatted)) {
+                monthMap.set(formatted, firstOfMonth);
+            }
         });
-        return Array.from(months);
+        // Sort by date ascending (oldest first)
+        return Array.from(monthMap.entries())
+            .sort((a, b) => a[1] - b[1])
+            .map(entry => entry[0]);
     }, [events]);
 
     // Extract available Projects
