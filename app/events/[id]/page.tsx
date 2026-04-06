@@ -171,8 +171,11 @@ export default function EventDetailsPage() {
     };
 
     const handleExport = () => {
-        // Trigger browser's native print dialog which handles oklch colors perfectly
+        if (!event) return;
+        const originalTitle = document.title;
+        document.title = `${event.title} - Relatório`;
         window.print();
+        setTimeout(() => { document.title = originalTitle; }, 500);
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

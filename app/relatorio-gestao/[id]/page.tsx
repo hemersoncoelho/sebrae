@@ -31,6 +31,14 @@ export default function GestaoReportDetailPage() {
         if (id) loadReport();
     }, [id]);
 
+    const handlePrint = () => {
+        if (!report) return;
+        const originalTitle = document.title;
+        document.title = `${report.eixo} - Relatório Gestão`;
+        window.print();
+        setTimeout(() => { document.title = originalTitle; }, 500);
+    };
+
     if (isLoading) return <BrainLoader />;
 
     if (!report) {
@@ -59,7 +67,7 @@ export default function GestaoReportDetailPage() {
                             {report.eixo}
                         </h1>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2">
+                    <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2">
                         <Download className="h-4 w-4" />
                         Imprimir / PDF
                     </Button>
