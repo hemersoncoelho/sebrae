@@ -54,7 +54,7 @@ export default function GestaoReportDetailPage() {
         <div className="min-h-screen bg-gray-50 pb-20">
             <style type="text/css" media="print">
                 {`
-                  @page { margin: 20mm; }
+                  @page { margin: 0mm; }
                 `}
             </style>
             <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-md">
@@ -75,6 +75,16 @@ export default function GestaoReportDetailPage() {
             </header>
 
             <main className="container mx-auto mt-8 max-w-4xl px-4 flex flex-col gap-8 print:mt-0 print:px-0">
+                <table className="w-full">
+                    <thead className="hidden print:table-header-group">
+                        <tr><td style={{ height: '20mm' }}></td></tr>
+                    </thead>
+                    <tfoot className="hidden print:table-footer-group">
+                        <tr><td style={{ height: '20mm' }}></td></tr>
+                    </tfoot>
+                    <tbody>
+                        <tr>
+                            <td className="align-top space-y-8">
                 {/* Cabeçalho do Relatório */}
                 <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm overflow-hidden relative">
                     <div className="absolute top-0 right-0 p-8">
@@ -234,6 +244,10 @@ export default function GestaoReportDetailPage() {
                         </a>
                     </div>
                 )}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </main>
         </div>
     );

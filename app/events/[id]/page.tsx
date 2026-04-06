@@ -539,7 +539,7 @@ export default function EventDetailsPage() {
                 <div className="hidden print:block absolute inset-0 bg-white z-[99999] print:m-0 print:p-0">
                     <style type="text/css" media="print">
                         {`
-                          @page { margin: 20mm; }
+                          @page { margin: 0mm; }
                         `}
                     </style>
                     <EventReportTemplate ref={reportRef} event={event} editedContent={editedContent} />

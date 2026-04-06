@@ -97,8 +97,17 @@ export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportT
 
     return (
         <div ref={ref} className="bg-white text-black w-[800px] max-w-[800px] min-h-[1123px] mx-auto overflow-hidden relative print:w-full print:max-w-none print:h-auto print:min-h-0" style={{ fontFamily: "Arial, sans-serif" }}>
-
-            <div className="px-12 py-12">
+            <table className="w-full">
+                <thead className="hidden print:table-header-group">
+                    <tr><td style={{ height: '20mm' }}></td></tr>
+                </thead>
+                <tfoot className="hidden print:table-footer-group">
+                    <tr><td style={{ height: '20mm' }}></td></tr>
+                </tfoot>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div className="px-12 py-12 print:px-12 print:py-0">
                 
                 {/* HEADERS */}
                 <div className="mb-6">
@@ -183,7 +192,11 @@ export const EventReportTemplate = React.forwardRef<HTMLDivElement, EventReportT
                         </div>
                     </div>
                 )}
-            </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     );
 });
