@@ -103,18 +103,15 @@ export default function CreateEventPage() {
         try {
             const now = new Date().toISOString();
 
-            // 1. Generate Content
-            const generated = generateContent(formData as EventItem);
-
-            // 2. Upload to Baserow (if image exists)
+            // 1. Upload to Baserow (if image exists)
             let baserowImageName = "";
             let baserowImageUrl = "";
 
             if (imageFile) {
                 try {
-                    const formData = new FormData();
-                    formData.append("file", imageFile);
-                    const uploadResult = await uploadImageToBaserow(formData);
+                    const formDataObj = new FormData();
+                    formDataObj.append("file", imageFile);
+                    const uploadResult = await uploadImageToBaserow(formDataObj);
                     baserowImageName = uploadResult.name;
                     baserowImageUrl = uploadResult.url;
                 } catch (err) {
@@ -122,7 +119,7 @@ export default function CreateEventPage() {
                 }
             }
 
-            // 3. Create Row in Baserow
+            // 2. Create Row in Baserow
             let baserowId = 0;
             try {
                 baserowId = await createEventRow({
@@ -147,9 +144,10 @@ export default function CreateEventPage() {
 
             const eventId = baserowId.toString();
 
-            // 4. Webhook Integration
+            // 3. Webhook Integration to generate content (Real AI instead of local fallback)
+            let generated = { summary: "", article: "" };
             try {
-                await fetch("https://webhook.solucoesai.tech/webhook/11606907-7c8a-4e60-b290-d8c4545cf2c4", {
+                const webhookResponse = await fetch("https://webhook.solucoesai.tech/webhook/11606907-7c8a-4e60-b290-d8c4545cf2c4", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -161,15 +159,28 @@ export default function CreateEventPage() {
                         coverUrl: baserowImageUrl,
                         fotos: baserowImageName ? [{ name: baserowImageName, url: baserowImageUrl }] : [],
                         coverBase64: baserowImageUrl ? "" : formData.coverBase64, // Send base64 if no URL
-                        generated,
                         createdAt: now,
                     }),
                 });
+
+                if (webhookResponse.ok) {
+                    try {
+                        const webhookData = await webhookResponse.json();
+                        if (webhookData.resumo || webhookData.materia || webhookData.texto_final_formatado || webhookData.summary || webhookData.article) {
+                            generated = {
+                                summary: webhookData.resumo || webhookData.summary || "",
+                                article: webhookData.texto_final_formatado || webhookData.materia || webhookData.article || ""
+                            };
+                        }
+                    } catch (err) {
+                        console.error("Webhook didn't return JSON or structure mismatch", err);
+                    }
+                }
             } catch (webhookError) {
                 console.error("Failed to send webhook", webhookError);
             }
 
-            // 5. Save Locally
+            // 4. Save Locally
             // IMPORTANT: If we have a remote URL, clear the base64 to avoid LocalStorage QuotaExceededError
             const eventToSave: EventItem = {
                 id: eventId,

@@ -81,10 +81,6 @@ export default function EventDetailsPage() {
                 if (!mappedEvent.coverUrl && localData.coverBase64) {
                     mappedEvent.coverBase64 = localData.coverBase64;
                 }
-            } else if (!mappedEvent.generated.summary && !mappedEvent.generated.article) {
-                // Generate fake content only if strictly empty
-                const generatedContent = generateContent(mappedEvent);
-                mappedEvent.generated = generatedContent;
             }
 
             setEvent(mappedEvent);
@@ -129,16 +125,42 @@ export default function EventDetailsPage() {
         return () => clearTimeout(timer);
     }, [editedContent, event]);
 
-    const handleRegenerate = () => {
+    const handleRegenerate = async () => {
         if (!event) return;
-        if (!confirm("Isso irá sobrescrever suas edições atuais. Continuar?")) return;
+        if (!confirm("Isso irá solicitar uma nova geração via inteligência artificial e pode levar alguns segundos. Continuar?")) return;
 
-        const newContent = generateContent(event);
-        setEditedContent(newContent);
-        // Save immediately
-        const updated = { ...event, generated: newContent, updatedAt: new Date().toISOString() };
-        saveEvent(updated);
-        setEvent(updated);
+        setIsSaving(true);
+        try {
+            const webhookResponse = await fetch("https://webhook.solucoesai.tech/webhook/11606907-7c8a-4e60-b290-d8c4545cf2c4", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...event, baserowId: parseInt(event.id) })
+            });
+
+            if (webhookResponse.ok) {
+                const whData = await webhookResponse.json();
+                if (whData.resumo || whData.materia || whData.texto_final_formatado || whData.summary || whData.article) {
+                    const newContent = {
+                        summary: whData.resumo || whData.summary || "",
+                        article: whData.texto_final_formatado || whData.materia || whData.article || ""
+                    };
+                    setEditedContent(newContent);
+                    const updated = { ...event, generated: newContent, updatedAt: new Date().toISOString() };
+                    saveEvent(updated);
+                    setEvent(updated);
+                    alert("Conteúdo regenerado com sucesso!");
+                } else {
+                    alert("Comando enviado com sucesso! Como a geração pode demorar, clique em 'Atualizar' em alguns segundos.");
+                }
+            } else {
+                alert("Erro ao contatar o servidor de IA.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao chamar a inteligência artificial.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleCopy = () => {
@@ -512,6 +534,11 @@ export default function EventDetailsPage() {
             {/* Hidden PDF Export Template */}
             {event && (
                 <div className="hidden print:block absolute inset-0 bg-white z-[99999] print:m-0 print:p-0">
+                    <style type="text/css" media="print">
+                        {`
+                          @page { margin: 20mm; }
+                        `}
+                    </style>
                     <EventReportTemplate ref={reportRef} event={event} editedContent={editedContent} />
                 </div>
             )}
