@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { X, Plus } from "lucide-react";
-import { Input } from "./ui/Input";
+import { Textarea } from "./ui/Textarea";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
 
@@ -17,15 +17,20 @@ interface ChipInputProps {
 export function ChipInput({ values, onChange, label, placeholder, error }: ChipInputProps) {
     const [inputValue, setInputValue] = React.useState("");
 
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
     const handleAdd = () => {
         if (inputValue.trim()) {
             onChange([...values, inputValue.trim()]);
             setInputValue("");
+            if (textareaRef.current) {
+                textareaRef.current.style.height = "auto";
+            }
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             handleAdd();
         }
@@ -38,16 +43,22 @@ export function ChipInput({ values, onChange, label, placeholder, error }: ChipI
     return (
         <div className="w-full space-y-2">
             {label && <label className="text-sm font-medium leading-none">{label}</label>}
-            <div className="flex gap-2">
-                <Input
+            <div className="flex gap-2 items-start">
+                <Textarea
+                    ref={textareaRef}
                     value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
+                    onChange={(e) => {
+                        setInputValue(e.target.value);
+                        e.target.style.height = "auto";
+                        e.target.style.height = `${e.target.scrollHeight + 2}px`;
+                    }}
                     onKeyDown={handleKeyDown}
                     onBlur={handleAdd}
                     placeholder={placeholder}
-                    className="flex-1"
+                    className="flex-1 min-h-[42px] resize-none overflow-hidden py-2.5"
+                    rows={1}
                 />
-                <Button type="button" onClick={handleAdd} size="icon" variant="secondary">
+                <Button type="button" onClick={handleAdd} size="icon" variant="secondary" className="shrink-0">
                     <Plus className="h-4 w-4" />
                 </Button>
             </div>

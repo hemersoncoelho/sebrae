@@ -16,22 +16,7 @@ import { saveEvent } from "@/app/utils/storage";
 import { generateContent } from "@/app/utils/generate";
 import { uploadImageToBaserow, createEventRow } from "@/app/services/baserow";
 
-const ORGANIZERS = [
-    "Carla Araújo",
-    "Julião Klessio",
-    "Aucélio de Sousa",
-    "Wandrey Girão",
-    "Georgia Nobre",
-    "Caio Sabóia"
-];
-
-const EIXOS = [
-    "Ambiente de Negócios",
-    "Rede de Atendimento",
-    "Cultura Empreendedora",
-    "Ecossistema de Inovação",
-    "Competitividade Empresarial"
-];
+import { getSettings, SettingsData } from "@/app/utils/settings";
 
 const PUBLICO_OPTIONS = [
     "Artesão",
@@ -44,29 +29,16 @@ const PUBLICO_OPTIONS = [
     "Estudante"
 ];
 
-const PROJETOS = [
-    "COMP. EMP - MODA CARIRI",
-    "COMP. EMP. - ROTA TURISTICA DO CARIRI",
-    "COMP. EMP. - BOVINOCULTURA DE LEITE E DERIVADOS CARIRI",
-    "COMP. EMP. - ALI PRODUTIVIDADE",
-    "COMP. EMP. - ALI RURAL",
-    "PLURAL CARIRI",
-    "EDUCAÇÃO EMPREENDEDORA - JEPP",
-    "PARCIAL",
-    "R.E - DESENVOLVIMENTO INOVAÇÃO - REGIONAL CARIRI",
-    "R.E - CE REDE INTEGRADA DE ECOSSISTEMAS DE INOVAÇÃO",
-    "A.N - CIDADE EMPREENDEDORA CARIRI",
-    "A.N - POLO EMPREENDEDOR CARIRI",
-    "A.N - TERRITÓRIO EMPREENDEDOR CE CARIRI",
-    "A.N - QUALIFICAÇÃO E RENDA",
-    "R.A. - TERRITÓRIOS DA ESPERANÇA - UR CARIRI"
-];
-
 export default function CreateEventPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = React.useState(false);
     const [errors, setErrors] = React.useState<Record<string, string>>({});
     const [imageFile, setImageFile] = React.useState<File | null>(null);
+    const [settings, setSettings] = React.useState<SettingsData>({ organizers: [], eixos: [], projetos: [] });
+
+    React.useEffect(() => {
+        setSettings(getSettings());
+    }, []);
 
     const [formData, setFormData] = React.useState<Partial<EventItem>>({
         title: "",
@@ -300,7 +272,7 @@ export default function CreateEventPage() {
                         <div className="grid gap-2">
                             <MultiSelect
                                 label="Organizador"
-                                options={ORGANIZERS}
+                                options={settings.organizers}
                                 values={formData.organizer || []}
                                 onChange={(vals) => setFormData({ ...formData, organizer: vals })}
                             />
@@ -309,7 +281,7 @@ export default function CreateEventPage() {
                         <div className="grid gap-2">
                             <MultiSelect
                                 label="Eixos"
-                                options={EIXOS}
+                                options={settings.eixos}
                                 values={formData.eixos || []}
                                 onChange={(vals) => setFormData({ ...formData, eixos: vals })}
                             />
@@ -318,7 +290,7 @@ export default function CreateEventPage() {
                         <div className="grid gap-2">
                             <MultiSelect
                                 label="Projetos"
-                                options={PROJETOS}
+                                options={settings.projetos}
                                 values={formData.projetos || []}
                                 onChange={(vals) => setFormData({ ...formData, projetos: vals })}
                             />

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, Settings } from "lucide-react";
 import { Button } from "@/app/components/ui/Button";
 import { Input } from "@/app/components/ui/Input";
 import { EventCard } from "@/app/components/EventCard";
@@ -222,12 +222,19 @@ export default function EventsPage() {
                         )}
                     </div>
 
-                    <Link href="/create">
-                        <Button className="shrink-0 gap-2">
-                            <Plus className="h-4 w-4" />
-                            <span className="hidden sm:inline">Novo Evento</span>
-                        </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <Link href="/settings">
+                            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700">
+                                <Settings className="h-5 w-5" />
+                            </Button>
+                        </Link>
+                        <Link href="/create">
+                            <Button className="shrink-0 gap-2">
+                                <Plus className="h-4 w-4" />
+                                <span className="hidden sm:inline">Novo Evento</span>
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             </header>
 
