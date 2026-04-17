@@ -2,6 +2,7 @@ export interface EventItem {
   id: string;
   title: string;
   date: string;
+  dateEnd?: string;
   location?: string;
   organizer?: string[];
   eixos?: string[];

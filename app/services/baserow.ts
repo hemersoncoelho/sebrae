@@ -149,3 +149,20 @@ export const updateEventRow = async (id: number, data: Partial<BaserowEventData>
     const responseData = await response.json();
     return responseData;
 };
+
+export const deleteEventRow = async (id: number): Promise<void> => {
+    if (!BASEROW_TOKEN) throw new Error("Missing BASEROW_TOKEN");
+
+    const response = await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/${id}/`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Token ${BASEROW_TOKEN}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error("Baserow Delete Error:", errorBody);
+        throw new Error(`Failed to delete row in Baserow: ${errorBody}`);
+    }
+};

@@ -3,20 +3,21 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Copy, Edit, RefreshCw, Share, Calendar, MapPin, User, Users, CheckCircle2, Upload, Loader2, Database } from "lucide-react";
+import { ArrowLeft, Copy, Edit, RefreshCw, Share, Calendar, MapPin, User, Users, CheckCircle2, Upload, Loader2, Database, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/app/components/ui/Button";
 import { Textarea } from "@/app/components/ui/Textarea";
 import { Badge } from "@/app/components/ui/Badge";
 import { Card, CardContent } from "@/app/components/ui/Card";
-import { getEvent, saveEvent } from "@/app/utils/storage";
+import { getEvent, saveEvent, deleteEvent } from "@/app/utils/storage";
 import { generateContent } from "@/app/utils/generate";
 import { EventItem } from "@/app/types";
 import ReactMarkdown from "react-markdown";
 import imageCompression from "browser-image-compression";
 import { EventReportTemplate } from "@/app/components/EventReportTemplate";
 
-import { getEventFromBaserow, uploadImageToBaserow, updateEventRow } from "@/app/services/baserow";
+import { getEventFromBaserow, uploadImageToBaserow, updateEventRow, deleteEventRow } from "@/app/services/baserow";
 import { ExpandableText } from "@/app/components/ExpandableText";
+import { Input } from "@/app/components/ui/Input";
 
 export default function EventDetailsPage() {
     const params = useParams();
@@ -34,6 +35,12 @@ export default function EventDetailsPage() {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [isExporting, setIsExporting] = React.useState(false);
     const reportRef = React.useRef<HTMLDivElement>(null);
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+    const [deleteConfirmation, setDeleteConfirmation] = React.useState("");
+    const [isDeletingPhoto, setIsDeletingPhoto] = React.useState(false);
+    const [dragPhotoIndex, setDragPhotoIndex] = React.useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
 
     const loadEvent = React.useCallback(async (forceRefresh = false) => {
         setIsLoading(true);
@@ -237,8 +244,111 @@ export default function EventDetailsPage() {
         }
     };
 
+    const handleDelete = async () => {
+        if (!event) return;
+        if (deleteConfirmation !== event.title) return;
+        
+        setIsDeleting(true);
+        try {
+            // Delete from baserow if possible
+            try {
+                const numId = parseInt(event.id);
+                if (!isNaN(numId)) {
+                    await deleteEventRow(numId);
+                }
+            } catch (err) {
+                console.error("Could not delete from baserow, might be local only", err);
+            }
+            
+            // Delete from local storage
+            deleteEvent(event.id);
+            alert("Evento excluído com sucesso.");
+            router.push("/events");
+        } catch (err) {
+            console.error("Error during deletion", err);
+            alert("Houve um erro ao excluir o evento.");
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteModal(false);
+        }
+    };
+
     const triggerFileInput = () => {
         fileInputRef.current?.click();
+    };
+
+    const handleDeletePhoto = async (photoIndex: number) => {
+        if (!event || !event.fotos) return;
+        if (!confirm("Tem certeza que deseja remover esta foto?")) return;
+
+        setIsDeletingPhoto(true);
+        try {
+            const newPhotos = event.fotos.filter((_, idx) => idx !== photoIndex);
+            await updateEventRow(parseInt(event.id), { Fotos: newPhotos });
+
+            const updatedEvent = {
+                ...event,
+                coverUrl: newPhotos[0]?.url || "",
+                fotos: newPhotos,
+                updatedAt: new Date().toISOString(),
+            };
+            setEvent(updatedEvent);
+            saveEvent(updatedEvent);
+        } catch (error) {
+            console.error("Failed to delete photo:", error);
+            alert("Erro ao remover a foto. Tente novamente.");
+        } finally {
+            setIsDeletingPhoto(false);
+        }
+    };
+
+    const handlePhotoDragStart = (idx: number) => {
+        setDragPhotoIndex(idx);
+    };
+
+    const handlePhotoDragOver = (e: React.DragEvent, idx: number) => {
+        e.preventDefault();
+        setDragOverIndex(idx);
+    };
+
+    const handlePhotoDrop = async (dropIdx: number) => {
+        if (!event || !event.fotos || dragPhotoIndex === null || dragPhotoIndex === dropIdx) {
+            setDragPhotoIndex(null);
+            setDragOverIndex(null);
+            return;
+        }
+
+        const newPhotos = [...event.fotos];
+        const [moved] = newPhotos.splice(dragPhotoIndex, 1);
+        newPhotos.splice(dropIdx, 0, moved);
+
+        const updatedEvent = {
+            ...event,
+            coverUrl: newPhotos[0]?.url || event.coverUrl,
+            fotos: newPhotos,
+            updatedAt: new Date().toISOString(),
+        };
+        setEvent(updatedEvent);
+        saveEvent(updatedEvent);
+
+        setDragPhotoIndex(null);
+        setDragOverIndex(null);
+
+        try {
+            await updateEventRow(parseInt(event.id), { Fotos: newPhotos });
+        } catch (error) {
+            console.error("Failed to reorder photos in Baserow:", error);
+        }
+    };
+
+    const handlePhotoDragEnd = () => {
+        setDragPhotoIndex(null);
+        setDragOverIndex(null);
+    };
+
+    const handleClearArticle = () => {
+        if (!confirm("Tem certeza que deseja apagar o conteúdo da matéria? Esta ação pode ser desfeita editando o texto.")) return;
+        setEditedContent((prev) => ({ ...prev, article: "" }));
     };
 
     if (isLoading) {
@@ -287,6 +397,15 @@ export default function EventDetailsPage() {
                         >
                             <Edit className="h-4 w-4 sm:mr-2" />
                             <span className="hidden sm:inline">{isEditing ? "Visualizar" : "Editar Texto"}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowDeleteModal(true)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        >
+                            <Trash2 className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Excluir</span>
                         </Button>
                     </div>
                 </div>
@@ -464,6 +583,18 @@ export default function EventDetailsPage() {
                         </div>
 
                         <div className="flex gap-2">
+                            {activeTab === "article" && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleClearArticle}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                    title="Apagar matéria"
+                                >
+                                    <Trash2 className="h-4 w-4 sm:mr-2" />
+                                    <span className="hidden sm:inline">Apagar Matéria</span>
+                                </Button>
+                            )}
                             <Button variant="outline" size="sm" onClick={handleCopy}>
                                 {copySuccess ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                                 <span className="ml-2 hidden sm:inline">{copySuccess || "Copiar"}</span>
@@ -505,18 +636,69 @@ export default function EventDetailsPage() {
                                             <p className="text-sm text-gray-400 mt-1">Clique no botão acima para enviar fotos para este evento.</p>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                            {event.fotos.map((photo, idx) => (
-                                                <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-gray-200">
-                                                    <img src={photo.url} alt={`Foto do evento ${idx + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                                        <a href={photo.url} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-sm transition-colors text-white">
-                                                            <Share className="h-4 w-4" />
-                                                        </a>
+                                        <>
+                                            <p className="text-xs text-gray-400 mb-3 flex items-center gap-1">
+                                                <GripVertical className="h-3 w-3" />
+                                                Arraste as fotos para reordenar. A primeira foto será a capa do evento.
+                                            </p>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                {event.fotos.map((photo, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        draggable
+                                                        onDragStart={() => handlePhotoDragStart(idx)}
+                                                        onDragOver={(e) => handlePhotoDragOver(e, idx)}
+                                                        onDrop={() => handlePhotoDrop(idx)}
+                                                        onDragEnd={handlePhotoDragEnd}
+                                                        className={`relative aspect-video rounded-xl overflow-hidden group border-2 transition-all cursor-grab active:cursor-grabbing ${
+                                                            dragOverIndex === idx && dragPhotoIndex !== idx
+                                                                ? "border-blue-500 scale-105 shadow-lg"
+                                                                : dragPhotoIndex === idx
+                                                                ? "border-blue-300 opacity-50"
+                                                                : "border-gray-200"
+                                                        }`}
+                                                    >
+                                                        <img
+                                                            src={photo.url}
+                                                            alt={`Foto do evento ${idx + 1}`}
+                                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                            draggable={false}
+                                                        />
+                                                        {idx === 0 && (
+                                                            <span className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                                                                Capa
+                                                            </span>
+                                                        )}
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                            <a
+                                                                href={photo.url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-2 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-sm transition-colors text-white"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <Share className="h-4 w-4" />
+                                                            </a>
+                                                            <button
+                                                                onClick={() => handleDeletePhoto(idx)}
+                                                                disabled={isDeletingPhoto}
+                                                                className="p-2 bg-red-500/80 hover:bg-red-600/90 rounded-full backdrop-blur-sm transition-colors text-white disabled:opacity-50"
+                                                                title="Remover foto"
+                                                            >
+                                                                {isDeletingPhoto ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                        <div className="absolute bottom-2 right-2 p-1 bg-black/30 rounded text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                            <GripVertical className="h-3 w-3" />
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
+                                                ))}
+                                            </div>
+                                        </>
                                     )}
                                 </div>
                             ) : (
@@ -543,6 +725,45 @@ export default function EventDetailsPage() {
                         `}
                     </style>
                     <EventReportTemplate ref={reportRef} event={event} editedContent={editedContent} />
+                </div>
+            )}
+
+            {/* Modal de Exclusão */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+                    <Card className="w-full max-w-md bg-white">
+                        <CardContent className="pt-6 space-y-4">
+                            <h3 className="text-xl font-bold text-gray-900">Excluir Evento</h3>
+                            <p className="text-sm text-gray-600">
+                                Esta ação é irreversível. Para confirmar, digite o nome exato do evento abaixo:
+                                <br />
+                                <strong className="select-none text-gray-900">{event.title}</strong>
+                            </p>
+                            <Input
+                                value={deleteConfirmation}
+                                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                placeholder={event.title}
+                                className="w-full"
+                            />
+                            <div className="flex justify-end gap-2 pt-4">
+                                <Button variant="outline" onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setDeleteConfirmation("");
+                                }}>
+                                    Cancelar
+                                </Button>
+                                <Button 
+                                    variant="primary" 
+                                    className="bg-red-600 hover:bg-red-700 border-0"
+                                    onClick={handleDelete}
+                                    disabled={deleteConfirmation !== event.title || isDeleting}
+                                    isLoading={isDeleting}
+                                >
+                                    Confirmar Exclusão
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             )}
         </div>

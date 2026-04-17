@@ -43,6 +43,7 @@ export default function CreateEventPage() {
     const [formData, setFormData] = React.useState<Partial<EventItem>>({
         title: "",
         date: "",
+        dateEnd: "",
         location: "",
         organizer: [],
         eixos: [],
@@ -158,6 +159,7 @@ export default function CreateEventPage() {
                 id: eventId,
                 title: formData.title!,
                 date: formData.date!,
+                dateEnd: formData.dateEnd || undefined,
                 location: formData.location,
                 organizer: formData.organizer,
                 eixos: formData.eixos,
@@ -250,7 +252,7 @@ export default function CreateEventPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <label className="text-sm font-medium">Data *</label>
+                                <label className="text-sm font-medium">Data / Hora de Início *</label>
                                 <Input
                                     type="datetime-local"
                                     value={formData.date}
@@ -260,13 +262,22 @@ export default function CreateEventPage() {
                                 {errors.date && <p className="text-xs text-red-500">{errors.date}</p>}
                             </div>
                             <div className="grid gap-2">
-                                <label className="text-sm font-medium">Local</label>
+                                <label className="text-sm font-medium">Data / Hora de Fim</label>
                                 <Input
-                                    placeholder="Ex: Auditório Principal"
-                                    value={formData.location}
-                                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    type="datetime-local"
+                                    value={formData.dateEnd}
+                                    onChange={(e) => setFormData({ ...formData, dateEnd: e.target.value })}
                                 />
                             </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <label className="text-sm font-medium">Local</label>
+                            <Input
+                                placeholder="Ex: Auditório Principal"
+                                value={formData.location}
+                                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                            />
                         </div>
 
                         <div className="grid gap-2">
