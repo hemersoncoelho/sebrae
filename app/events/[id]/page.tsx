@@ -138,18 +138,11 @@ export default function EventDetailsPage() {
 
         setIsSaving(true);
         try {
-            // #region agent log
-            fetch('http://127.0.0.1:7827/ingest/db4acbf8-f183-44aa-8546-cdd6f0a0ce7e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ed381d'},body:JSON.stringify({sessionId:'ed381d',hypothesisId:'H-A,H-B,H-C,H-D',location:'events/[id]/page.tsx:regenerate-before',message:'Iniciando fetch ao webhook (Regenerar)',data:{eventId:event.id,baserowId:parseInt(event.id),origin:window.location.origin},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-            const webhookResponse = await fetch("https://webhook.solucoesai.tech/webhook/11606907-7c8a-4e60-b290-d8c4545cf2c4", {
+            const webhookResponse = await fetch("/api/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...event, baserowId: parseInt(event.id) })
             });
-
-            // #region agent log
-            fetch('http://127.0.0.1:7827/ingest/db4acbf8-f183-44aa-8546-cdd6f0a0ce7e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ed381d'},body:JSON.stringify({sessionId:'ed381d',hypothesisId:'H-D,H-E',location:'events/[id]/page.tsx:regenerate-response',message:'Resposta recebida do webhook (Regenerar)',data:{status:webhookResponse.status,ok:webhookResponse.ok,statusText:webhookResponse.statusText},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
 
             if (webhookResponse.ok) {
                 const whData = await webhookResponse.json();
@@ -170,13 +163,8 @@ export default function EventDetailsPage() {
                 alert("Erro ao contatar o servidor de IA.");
             }
         } catch (e) {
-            // #region agent log
-            fetch('http://127.0.0.1:7827/ingest/db4acbf8-f183-44aa-8546-cdd6f0a0ce7e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ed381d'},body:JSON.stringify({sessionId:'ed381d',hypothesisId:'H-A,H-B,H-C',location:'events/[id]/page.tsx:regenerate-catch',message:'ERRO no fetch ao webhook (Regenerar)',data:{errorName:(e instanceof Error)?e.name:'unknown',errorMessage:(e instanceof Error)?e.message:'unknown',errorString:String(e)},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-            const errName = (e instanceof Error) ? e.name : 'unknown';
-            const errMsg = (e instanceof Error) ? e.message : String(e);
-            console.error('[DEBUG-ed381d] Regenerar webhook error:', errName, errMsg, e);
-            alert(`[DEBUG] Erro ao chamar IA.\nTipo: ${errName}\nMensagem: ${errMsg}`);
+            console.error(e);
+            alert("Erro ao chamar a inteligência artificial.");
         } finally {
             setIsSaving(false);
         }
