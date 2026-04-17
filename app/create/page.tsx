@@ -120,6 +120,9 @@ export default function CreateEventPage() {
             // 3. Webhook Integration to generate content (Real AI instead of local fallback)
             let generated = { summary: "", article: "" };
             try {
+                // #region agent log
+                fetch('http://127.0.0.1:7827/ingest/db4acbf8-f183-44aa-8546-cdd6f0a0ce7e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ed381d'},body:JSON.stringify({sessionId:'ed381d',hypothesisId:'H-A,H-B,H-C,H-D',location:'create/page.tsx:webhook-before',message:'Iniciando fetch ao webhook (Gerar)',data:{baserowId,origin:window.location.origin,eventId},timestamp:Date.now()})}).catch(()=>{});
+                // #endregion
                 const webhookResponse = await fetch("https://webhook.solucoesai.tech/webhook/11606907-7c8a-4e60-b290-d8c4545cf2c4", {
                     method: "POST",
                     headers: {
@@ -136,9 +139,16 @@ export default function CreateEventPage() {
                     }),
                 });
 
+                // #region agent log
+                fetch('http://127.0.0.1:7827/ingest/db4acbf8-f183-44aa-8546-cdd6f0a0ce7e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ed381d'},body:JSON.stringify({sessionId:'ed381d',hypothesisId:'H-D,H-E',location:'create/page.tsx:webhook-response',message:'Resposta recebida do webhook (Gerar)',data:{status:webhookResponse.status,ok:webhookResponse.ok,statusText:webhookResponse.statusText},timestamp:Date.now()})}).catch(()=>{});
+                // #endregion
+
                 if (webhookResponse.ok) {
                     try {
                         const webhookData = await webhookResponse.json();
+                        // #region agent log
+                        fetch('http://127.0.0.1:7827/ingest/db4acbf8-f183-44aa-8546-cdd6f0a0ce7e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ed381d'},body:JSON.stringify({sessionId:'ed381d',hypothesisId:'H-E',location:'create/page.tsx:webhook-data',message:'Dados recebidos do webhook (Gerar)',data:{keys:Object.keys(webhookData),hasResumo:!!webhookData.resumo,hasMateria:!!webhookData.materia,hasTexto:!!webhookData.texto_final_formatado},timestamp:Date.now()})}).catch(()=>{});
+                        // #endregion
                         if (webhookData.resumo || webhookData.materia || webhookData.texto_final_formatado || webhookData.summary || webhookData.article) {
                             generated = {
                                 summary: webhookData.resumo || webhookData.summary || "",
@@ -150,6 +160,9 @@ export default function CreateEventPage() {
                     }
                 }
             } catch (webhookError) {
+                // #region agent log
+                fetch('http://127.0.0.1:7827/ingest/db4acbf8-f183-44aa-8546-cdd6f0a0ce7e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ed381d'},body:JSON.stringify({sessionId:'ed381d',hypothesisId:'H-A,H-B,H-C',location:'create/page.tsx:webhook-catch',message:'ERRO no fetch ao webhook (Gerar)',data:{errorName:(webhookError instanceof Error)?webhookError.name:'unknown',errorMessage:(webhookError instanceof Error)?webhookError.message:'unknown',errorString:String(webhookError)},timestamp:Date.now()})}).catch(()=>{});
+                // #endregion
                 console.error("Failed to send webhook", webhookError);
             }
 
