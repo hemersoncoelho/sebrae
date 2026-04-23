@@ -160,7 +160,9 @@ export default function EventDetailsPage() {
                     alert("Comando enviado com sucesso! Como a geração pode demorar, clique em 'Atualizar' em alguns segundos.");
                 }
             } else {
-                alert("Erro ao contatar o servidor de IA.");
+                const errData = await webhookResponse.json().catch(() => ({}));
+                const debugInfo = `Status: ${webhookResponse.status} | Code: ${errData.debugCode || "?"} | ${errData.detail || "sem detalhe"}`;
+                alert(`[DEBUG] Erro ao contatar IA.\n${debugInfo}`);
             }
         } catch (e) {
             console.error(e);
